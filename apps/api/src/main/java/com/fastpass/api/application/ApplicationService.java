@@ -2,6 +2,8 @@ package com.fastpass.api.application;
 
 import com.fastpass.api.application.dto.ApplicationRequest;
 import com.fastpass.api.application.dto.ApplicationResponse;
+import com.fastpass.api.common.exception.DuplicateApplicationException;
+import com.fastpass.api.common.exception.NotFoundException;
 import com.fastpass.api.event.Event;
 import com.fastpass.api.event.EventRepository;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,13 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponse apply(Long eventId, ApplicationRequest request) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+                .orElseThrow(() -> new NotFoundException("Event not found. id=" + eventId));
+
+        if (applicationRepository.existsByEvent_IdAndApplicantName(eventId, request.applicantName())) {
+            throw new DuplicateApplicationException(
+                    "Already applied to this event. eventId=" + eventId + ", applicantName=" + request.applicantName()
+            );
+        }
 
         ApplicationStatus status;
 
@@ -49,7 +57,7 @@ public class ApplicationService {
     @Transactional(readOnly = true)
     public ApplicationResponse getApplication(Long applicationId) {
         EventApplication application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new IllegalArgumentException("Application not found. id=" + applicationId));
+                .orElseThrow(() -> new NotFoundException("Application not found. id=" + applicationId));
 
         return ApplicationResponse.from(application);
     }

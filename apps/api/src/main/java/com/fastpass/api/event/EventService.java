@@ -1,5 +1,6 @@
 package com.fastpass.api.event;
 
+import com.fastpass.api.common.exception.NotFoundException;
 import com.fastpass.api.event.dto.EventCreateRequest;
 import com.fastpass.api.event.dto.EventResponse;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public EventResponse getEvent(Long eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found. id=" + eventId));
+                .orElseThrow(() -> new NotFoundException("Event not found. id=" + eventId));
 
         return EventResponse.from(event);
     }
