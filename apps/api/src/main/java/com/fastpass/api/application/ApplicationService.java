@@ -6,6 +6,7 @@ import com.fastpass.api.common.exception.DuplicateApplicationException;
 import com.fastpass.api.common.exception.NotFoundException;
 import com.fastpass.api.event.Event;
 import com.fastpass.api.event.EventRepository;
+import com.fastpass.api.queue.ApplicationQueueService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,13 +15,16 @@ public class ApplicationService {
 
     private final EventRepository eventRepository;
     private final EventApplicationRepository applicationRepository;
+    private final ApplicationQueueService applicationQueueService;
 
     public ApplicationService(
             EventRepository eventRepository,
-            EventApplicationRepository applicationRepository
+            EventApplicationRepository applicationRepository,
+            ApplicationQueueService applicationQueueService
     ) {
         this.eventRepository = eventRepository;
         this.applicationRepository = applicationRepository;
+        this.applicationQueueService = applicationQueueService;
     }
 
     @Transactional
@@ -34,22 +38,15 @@ public class ApplicationService {
             );
         }
 
-        ApplicationStatus status;
-
-        if (event.isFull()) {
-            status = ApplicationStatus.FAILED;
-        } else {
-            event.increaseAppliedCount();
-            status = ApplicationStatus.SUCCESS;
-        }
-
         EventApplication application = new EventApplication(
                 event,
                 request.applicantName(),
-                status
+                ApplicationStatus.PENDING
         );
 
         EventApplication savedApplication = applicationRepository.save(application);
+
+        applicationQueueService.enqueue(savedApplication.getId());
 
         return ApplicationResponse.from(savedApplication);
     }

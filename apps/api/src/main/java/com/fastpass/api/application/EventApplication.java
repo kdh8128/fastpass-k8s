@@ -42,6 +42,14 @@ public class EventApplication {
         this.createdAt = LocalDateTime.now();
     }
 
+    public void markSuccess() {
+        this.status = ApplicationStatus.SUCCESS;
+    }
+
+    public void markFailed() {
+        this.status = ApplicationStatus.FAILED;
+    }
+
     public Long getId() {
         return id;
     }
