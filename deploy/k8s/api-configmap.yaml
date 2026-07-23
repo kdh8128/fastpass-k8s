@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fastpass-api-config
+  namespace: fastpass
+data:
+  SPRING_PROFILES_ACTIVE: docker

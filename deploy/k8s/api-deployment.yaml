@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastpass-api
+  namespace: fastpass
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastpass-api
+  template:
+    metadata:
+      labels:
+        app: fastpass-api
+    spec:
+      containers:
+        - name: fastpass-api
+          image: fastpass-k8s-api:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: fastpass-api-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 10
