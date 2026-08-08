@@ -3,6 +3,9 @@ package com.fastpass.api.queue;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class ApplicationQueueService {
 
@@ -26,6 +29,22 @@ public class ApplicationQueueService {
         }
 
         return Long.parseLong(value);
+    }
+
+    public List<Long> dequeueBatch(int batchSize) {
+        List<Long> applicationIds = new ArrayList<>();
+
+        for (int i = 0; i < batchSize; i++) {
+            Long applicationId = dequeue();
+
+            if (applicationId == null) {
+                break;
+            }
+
+            applicationIds.add(applicationId);
+        }
+
+        return applicationIds;
     }
 
     public Long getQueueSize() {

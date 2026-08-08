@@ -1,52 +1,40 @@
 package com.fastpass.api.queue;
 
-import com.fastpass.api.application.EventApplication;
-import com.fastpass.api.application.EventApplicationRepository;
-import com.fastpass.api.common.exception.NotFoundException;
-import com.fastpass.api.event.Event;
-import com.fastpass.api.event.EventRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Component
 public class ApplicationQueueWorker {
 
+    private static final int BATCH_SIZE = 50;
+
     private final ApplicationQueueService applicationQueueService;
-    private final EventApplicationRepository applicationRepository;
-    private final EventRepository eventRepository;
+    private final ApplicationProcessor applicationProcessor;
 
     public ApplicationQueueWorker(
             ApplicationQueueService applicationQueueService,
-            EventApplicationRepository applicationRepository,
-            EventRepository eventRepository
+            ApplicationProcessor applicationProcessor
     ) {
         this.applicationQueueService = applicationQueueService;
-        this.applicationRepository = applicationRepository;
-        this.eventRepository = eventRepository;
+        this.applicationProcessor = applicationProcessor;
     }
 
     @Scheduled(fixedDelay = 1000)
-    @Transactional
     public void processApplicationQueue() {
-        Long applicationId = applicationQueueService.dequeue();
+        List<Long> applicationIds = applicationQueueService.dequeueBatch(BATCH_SIZE);
 
-        if (applicationId == null) {
+        if (applicationIds.isEmpty()) {
             return;
         }
 
-        EventApplication application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application not found. id=" + applicationId));
-
-        Event event = eventRepository.findByIdForUpdate(application.getEvent().getId())
-                .orElseThrow(() -> new NotFoundException("Event not found. id=" + application.getEvent().getId()));
-
-        if (event.isFull()) {
-            application.markFailed();
-            return;
+        for (Long applicationId : applicationIds) {
+            try {
+                applicationProcessor.process(applicationId);
+            } catch (Exception e) {
+                System.err.println("Failed to process application. applicationId=" + applicationId + ", message=" + e.getMessage());
+            }
         }
-
-        event.increaseAppliedCount();
-        application.markSuccess();
     }
 }
