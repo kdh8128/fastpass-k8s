@@ -19,6 +19,10 @@ spring:
       host: redis
       port: 6379
 
+fastpass:
+  worker:
+    enabled: true
+
 management:
   endpoints:
     web:

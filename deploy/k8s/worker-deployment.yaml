@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fastpass-api
+  name: fastpass-worker
   namespace: fastpass
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fastpass-api
+      app: fastpass-worker
   template:
     metadata:
       labels:
-        app: fastpass-api
+        app: fastpass-worker
     spec:
       containers:
-        - name: fastpass-api
+        - name: fastpass-worker
           image: fastpass-k8s-api:latest
           imagePullPolicy: Never
           ports:
@@ -24,7 +24,7 @@ spec:
                 name: fastpass-api-config
           env:
             - name: FASTPASS_WORKER_ENABLED
-              value: "false"
+              value: "true"
           readinessProbe:
             httpGet:
               path: /actuator/health
