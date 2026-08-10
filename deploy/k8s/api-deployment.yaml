@@ -25,6 +25,13 @@ spec:
           env:
             - name: FASTPASS_WORKER_ENABLED
               value: "false"
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
           readinessProbe:
             httpGet:
               path: /actuator/health
