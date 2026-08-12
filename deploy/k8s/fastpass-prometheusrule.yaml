@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fastpass-prometheusrule
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+    - name: fastpass.rules
+      rules:
+        - alert: FastPassQueueBacklogHigh
+          expr: max(fastpass_queue_size{namespace="fastpass"}) > 50
+          for: 1m
+          labels:
+            severity: warning
+            service: fastpass
+          annotations:
+            summary: "FastPass queue backlog is high"
+            description: "FastPass Redis queue size has been greater than 50 for more than 1 minute."
+
+        - alert: FastPassWorkerProcessingFailureDetected
+          expr: sum(increase(fastpass_worker_processing_failed_total{namespace="fastpass", job="fastpass-worker"}[5m])) > 0
+          for: 30s
+          labels:
+            severity: warning
+            service: fastpass
+          annotations:
+            summary: "FastPass worker processing failure detected"
+            description: "FastPass worker processing failures have increased within the last 5 minutes."
+
+        - alert: FastPassTargetDown
+          expr: min(up{namespace="fastpass"}) by (job) == 0
+          for: 1m
+          labels:
+            severity: critical
+            service: fastpass
+          annotations:
+            summary: "FastPass target is down"
+            description: "One or more FastPass Prometheus targets are down for more than 1 minute."
