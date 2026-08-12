@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fastpass-servicemonitor
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - fastpass
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - fastpass-api
+          - fastpass-worker
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
