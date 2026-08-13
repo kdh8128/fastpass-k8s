@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fastpass-gitops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/kdh8128/fastpass-k8s.git
+    targetRevision: main
+    path: deploy/helm/fastpass
+    helm:
+      releaseName: fastpass-gitops
+      parameters:
+        - name: namespace
+          value: fastpass-gitops
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fastpass-gitops
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
