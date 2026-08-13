@@ -22,7 +22,15 @@ spec:
     server: https://kubernetes.default.svc
     namespace: fastpass-gitops
 
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
