@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fastpass
+description: A Helm chart for FastPass Kubernetes deployment
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

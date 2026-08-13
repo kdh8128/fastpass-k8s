@@ -1,0 +1,59 @@
+namespace: fastpass
+
+image:
+  repository: fastpass-k8s-api
+  tag: latest
+  pullPolicy: Never
+
+api:
+  replicas: 1
+  port: 8080
+  workerEnabled: false
+
+worker:
+  replicas: 1
+  port: 8080
+  workerEnabled: true
+
+postgres:
+  image: postgres:16
+  database: fastpass
+  username: fastpass
+  password: fastpass
+  port: 5432
+  storage: 1Gi
+
+redis:
+  image: redis:7.2-alpine
+  port: 6379
+
+resources:
+  api:
+    requests:
+      cpu: 10m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  worker:
+    requests:
+      cpu: 10m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  cpuAverageUtilization: 50
+
+monitoring:
+  enabled: true
+  namespace: monitoring
+  releaseLabel: prometheus-stack
+
+alerting:
+  enabled: true
+  queueBacklogThreshold: 50

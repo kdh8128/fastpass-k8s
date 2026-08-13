@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastpass-worker
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      app: fastpass-worker
+  template:
+    metadata:
+      labels:
+        app: fastpass-worker
+    spec:
+      containers:
+        - name: fastpass-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.worker.port }}
+
+          envFrom:
+            - configMapRef:
+                name: fastpass-api-config
+
+          env:
+            - name: FASTPASS_WORKER_ENABLED
+              value: {{ .Values.worker.workerEnabled | quote }}
+
+          resources:
+            requests:
+              cpu: {{ .Values.resources.worker.requests.cpu | quote }}
+              memory: {{ .Values.resources.worker.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.worker.limits.cpu | quote }}
+              memory: {{ .Values.resources.worker.limits.memory | quote }}
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.worker.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.worker.port }}
+            initialDelaySeconds: 40
+            periodSeconds: 10
