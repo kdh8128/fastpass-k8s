@@ -1,9 +1,9 @@
 namespace: fastpass
 
 image:
-  repository: fastpass-k8s-api
+  repository: ghcr.io/kdh8128/fastpass-k8s-api
   tag: latest
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
 
 api:
   replicas: 1
