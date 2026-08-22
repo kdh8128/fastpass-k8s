@@ -4,7 +4,7 @@
 
 이 문서는 FastPass 프로젝트를 진행하면서 발생한 주요 문제와 해결 과정을 한 곳에 정리한 Troubleshooting Index이다.
 
-FastPass는 단순히 기능 구현만 한 프로젝트가 아니라, Kubernetes 배포, 부하 테스트, HPA, Prometheus/Grafana, Alertmanager, Helm, ArgoCD, GitHub Actions, GHCR까지 단계적으로 확장한 DevOps/Cloud 운영 검증 프로젝트이다.
+FastPass는 단순 기능 구현 프로젝트가 아니라 Spring Boot API, Redis Queue Worker, Docker, Kubernetes, HPA, Prometheus/Grafana, Alertmanager, Helm, ArgoCD, GitHub Actions, GHCR, Frontend, CI/CD 자동화까지 단계적으로 확장한 DevOps/Cloud 운영 검증 프로젝트이다.
 
 따라서 각 단계에서 실제로 발생한 문제와 해결 과정을 문서화하는 것은 프로젝트의 중요한 일부이다.
 
@@ -39,6 +39,10 @@ FastPass는 단순히 기능 구현만 한 프로젝트가 아니라, Kubernetes
 | 14 | GitHub Actions warning | CI | deprecated action version 사용 | action version 업데이트 |
 | 15 | Docker image가 runner 안에서만 사라짐 | CI/CD | Docker build만 하고 registry push 없음 | GHCR push 추가 |
 | 16 | Helm이 local image를 계속 사용 | Helm / ArgoCD | image repository가 local 기준 | GHCR image로 변경 |
+| 17 | Frontend 추가 후 Kubernetes에 새 화면이 바로 반영되지 않음 | Frontend / ArgoCD | `latest` tag와 `IfNotPresent` 조합으로 새 image pull 보장 안 됨 | commit SHA tag 기반 배포로 전환 |
+| 18 | GHCR push 후 ArgoCD가 새 image를 감지하지 못함 | GitOps / CD | image만 바뀌고 Git manifest는 변경되지 않음 | values.yaml image tag 자동 업데이트 |
+| 19 | GitHub Actions workflow 수정이 반영되지 않음 | CI/CD | 실제 workflow 파일은 `ci.yaml`인데 `ci.yml` 기준으로 수정함 | 실제 사용 중인 workflow 파일 수정 |
+| 20 | 자동 tag update commit으로 CI 무한 반복 가능성 | CI/CD | GitHub Actions가 commit/push하면 workflow가 다시 실행될 수 있음 | 자동 commit message에 `[skip ci]` 추가 |
 
 ---
 
@@ -161,6 +165,15 @@ docker save fastpass-k8s-api:latest | docker exec -i desktop-control-plane ctr -
 image:
   repository: ghcr.io/kdh8128/fastpass-k8s-api
   tag: latest
+  pullPolicy: IfNotPresent
+```
+
+최종적으로는 `latest`가 아니라 commit SHA tag 기반 배포로 전환하였다.
+
+```yaml
+image:
+  repository: ghcr.io/kdh8128/fastpass-k8s-api
+  tag: <commit-sha>
   pullPolicy: IfNotPresent
 ```
 
@@ -932,7 +945,271 @@ Helm Chart 또는 Kubernetes manifest가 해당 registry image를 참조해야 �
 
 ---
 
-## 19. 운영 관점에서 얻은 교훈
+## 19. Issue 17: Frontend 추가 후 Kubernetes에 새 화면이 바로 반영되지 않음
+
+### 문제 상황
+
+Spring Boot static frontend를 추가하고 CI가 성공했지만, Kubernetes에 배포된 화면이 반드시 새 frontend를 보여주는 구조는 아니었다.
+
+Frontend 파일은 다음 위치에 추가되었다.
+
+```text
+apps/api/src/main/resources/static/
+├── index.html
+├── styles.css
+└── app.js
+```
+
+CI는 성공했고 GHCR에도 새 image가 push되었다.
+
+하지만 Helm values는 여전히 다음과 같이 `latest` tag를 사용하고 있었다.
+
+```yaml
+image:
+  repository: ghcr.io/kdh8128/fastpass-k8s-api
+  tag: latest
+  pullPolicy: IfNotPresent
+```
+
+### 원인
+
+`latest` tag는 새 image가 push되어도 Git manifest 값 자체는 바뀌지 않는다.
+
+ArgoCD는 Git repository의 desired state 변화를 기준으로 Sync 여부를 판단한다.
+
+따라서 image registry에 새로운 `latest` image가 push되어도, Git의 Helm Chart가 그대로라면 ArgoCD 입장에서는 변경 사항이 없다고 볼 수 있다.
+
+또한 `imagePullPolicy: IfNotPresent`인 경우 node에 이미 `latest` image가 존재하면 새 image를 pull하지 않을 수 있다.
+
+### 해결
+
+임시로는 rollout restart를 통해 Pod를 재시작할 수 있다.
+
+```bash
+kubectl rollout restart deployment/fastpass-api -n fastpass-gitops
+kubectl rollout restart deployment/fastpass-worker -n fastpass-gitops
+```
+
+하지만 최종적으로는 commit SHA tag 기반 배포로 전환하였다.
+
+```yaml
+image:
+  repository: ghcr.io/kdh8128/fastpass-k8s-api
+  tag: <commit-sha>
+  pullPolicy: IfNotPresent
+```
+
+이를 통해 새 frontend가 포함된 image가 명확한 tag로 배포되도록 하였다.
+
+### 정리
+
+`latest` tag는 편하지만 GitOps 기반 배포에서는 변경 추적이 어렵다.
+
+ArgoCD가 새 배포를 감지하려면 Git manifest의 image tag 값이 실제로 바뀌어야 한다.
+
+---
+
+## 20. Issue 18: GHCR push 후 ArgoCD가 새 image를 감지하지 못함
+
+### 문제 상황
+
+GitHub Actions가 GHCR에 image를 push하는 데 성공했지만, ArgoCD가 자동으로 새 image를 배포하지는 않았다.
+
+흐름은 다음까지는 성공하였다.
+
+```text
+git push
+↓
+GitHub Actions
+↓
+Docker image build
+↓
+GHCR push
+```
+
+하지만 ArgoCD가 감지할 Git 변경이 없었다.
+
+### 원인
+
+GHCR에 image가 새로 push되는 것과 Git repository의 Helm values.yaml이 변경되는 것은 별개의 일이다.
+
+ArgoCD는 기본적으로 Git repository의 manifest 변경을 감지한다.
+
+즉, 다음 상태에서는 ArgoCD가 새 배포를 수행할 이유가 없다.
+
+```text
+GHCR image는 새로 push됨
+하지만 values.yaml의 image.tag는 그대로 latest
+Git manifest 변경 없음
+```
+
+### 해결
+
+GitHub Actions에 `update-helm-image-tag` job을 추가하였다.
+
+최종 CI/CD 흐름은 다음과 같다.
+
+```text
+git push
+↓
+GitHub Actions
+↓
+Spring Boot build
+↓
+Docker image build
+↓
+GHCR image push
+↓
+values.yaml image.tag를 commit SHA로 자동 수정
+↓
+GitHub Actions bot commit/push
+↓
+ArgoCD가 Git 변경 감지
+↓
+Kubernetes 자동 재배포
+```
+
+values.yaml의 image tag는 다음과 같이 자동 변경된다.
+
+```yaml
+image:
+  repository: ghcr.io/kdh8128/fastpass-k8s-api
+  tag: <commit-sha>
+  pullPolicy: IfNotPresent
+```
+
+### 정리
+
+GitOps에서 중요한 것은 “image가 새로 push되었는가”가 아니라 “Git desired state가 바뀌었는가”이다.
+
+따라서 ArgoCD가 새 image를 배포하게 하려면 Helm values.yaml 같은 Git manifest에 image tag 변경이 반영되어야 한다.
+
+---
+
+## 21. Issue 19: GitHub Actions workflow 수정이 반영되지 않음
+
+### 문제 상황
+
+GitHub Actions workflow에 `Update Helm Image Tag` job을 추가했지만, Actions 화면에 새 job이 나타나지 않았다.
+
+기대했던 job은 다음과 같았다.
+
+```text
+Build Spring Boot API
+Build and Push Docker Image
+Update Helm Image Tag
+```
+
+하지만 Actions 화면에는 기존 workflow만 실행되는 것처럼 보였다.
+
+### 원인
+
+실제 repository에서 사용 중인 workflow 파일은 다음과 같았다.
+
+```text
+.github/workflows/ci.yaml
+```
+
+하지만 수정 기준을 다음 파일로 생각하고 있었다.
+
+```text
+.github/workflows/ci.yml
+```
+
+GitHub Actions는 `.yml`과 `.yaml` 확장자를 모두 지원하지만, 실제로 repository에서 사용 중인 파일과 다른 파일을 수정하면 기대한 workflow 변경이 반영되지 않는다.
+
+### 해결
+
+실제 사용 중인 workflow 파일인 `ci.yaml`을 수정하였다.
+
+수정 후 push하자 Actions 화면에 세 job이 모두 표시되었다.
+
+```text
+Build Spring Boot API
+Build and Push Docker Image
+Update Helm Image Tag
+```
+
+모든 job이 성공하였다.
+
+```text
+Status: Success
+```
+
+### 정리
+
+GitHub Actions workflow 파일을 수정할 때는 실제 repository에서 사용 중인 파일명을 정확히 확인해야 한다.
+
+```bash
+ls .github/workflows
+```
+
+workflow 파일이 여러 개 있으면 혼란이 생길 수 있으므로, 하나의 파일로 정리하는 것이 좋다.
+
+---
+
+## 22. Issue 20: 자동 tag update commit으로 CI 무한 반복 가능성
+
+### 문제 상황
+
+GitHub Actions가 values.yaml의 image tag를 자동으로 수정하고 commit/push하도록 구성하였다.
+
+이 구조에서는 다음 문제가 발생할 수 있다.
+
+```text
+GitHub Actions가 values.yaml 수정
+↓
+자동 commit/push
+↓
+push 이벤트로 GitHub Actions 다시 실행
+↓
+다시 values.yaml 수정
+↓
+다시 commit/push
+↓
+반복
+```
+
+### 원인
+
+GitHub Actions의 자동 commit도 결국 main branch에 대한 push 이벤트이다.
+
+workflow가 push 이벤트에 반응하도록 설정되어 있으면, GitHub Actions bot의 commit도 다시 workflow를 실행시킬 수 있다.
+
+### 해결
+
+자동 commit message에 `[skip ci]`를 포함하였다.
+
+```bash
+git commit -m "chore: update image tag to ${{ github.sha }} [skip ci]"
+```
+
+자동 commit 메시지는 다음 형태가 된다.
+
+```text
+chore: update image tag to <commit-sha> [skip ci]
+```
+
+이 commit은 CI를 다시 실행하지 않도록 의도하였다.
+
+또한 workflow에는 변경이 없을 경우 commit하지 않도록 방어 로직을 추가하였다.
+
+```bash
+if git diff --cached --quiet; then
+  echo "No Helm image tag changes to commit."
+  exit 0
+fi
+```
+
+### 정리
+
+CI/CD workflow가 Git을 다시 수정하고 push하는 구조에서는 무한 loop 가능성을 반드시 고려해야 한다.
+
+자동 commit에는 `[skip ci]`를 사용하거나, paths filter, 조건문, branch 전략 등을 통해 재실행을 제어해야 한다.
+
+---
+
+## 23. 운영 관점에서 얻은 교훈
 
 이번 프로젝트의 Troubleshooting을 통해 확인한 운영 관점의 교훈은 다음과 같다.
 
@@ -946,12 +1223,15 @@ Helm Chart 또는 Kubernetes manifest가 해당 registry image를 참조해야 �
 7. HPA와 ArgoCD를 함께 사용할 때 replicas drift를 고려해야 한다.
 8. CI에서 Docker build만 하는 것과 registry push까지 하는 것은 다르다.
 9. GitOps 환경에서는 수동 kubectl 변경이 drift를 만들 수 있다.
-10. 문제 해결 과정 자체가 DevOps 포트폴리오의 중요한 증거가 된다.
+10. latest tag는 편하지만 GitOps 배포 추적에는 적합하지 않을 수 있다.
+11. ArgoCD가 새 image를 배포하려면 Git manifest 변경이 필요하다.
+12. GitHub Actions가 Git을 다시 수정하는 구조에서는 CI loop 방지가 필요하다.
+13. 문제 해결 과정 자체가 DevOps 포트폴리오의 중요한 증거가 된다.
 ```
 
 ---
 
-## 20. 문서별 상세 참고
+## 24. 문서별 상세 참고
 
 각 문제의 자세한 구현 및 검증 과정은 다음 문서에서 확인할 수 있다.
 
@@ -972,12 +1252,14 @@ Helm Chart 또는 Kubernetes manifest가 해당 registry image를 참조해야 �
 | Helm | `docs/13-helm.md` |
 | ArgoCD GitOps | `docs/14-argocd-gitops.md` |
 | GitHub Actions CI | `docs/15-github-actions-ci.md` |
-| GHCR image push | `docs/16-container-registry-ghcr.md` |
-| GHCR image deployment | `docs/17-ghcr-argocd-deployment.md` |
+| GHCR image push | `docs/16-ghcr.md` |
+| GHCR image deployment | `docs/17-ghcr-argocd.md` |
+| Simple Frontend | `docs/18-simple-frontend.md` |
+| CI/CD Automation | `docs/19-cicd-automation.md` |
 
 ---
 
-## 21. 결론
+## 25. 결론
 
 FastPass 프로젝트에서는 구현 단계뿐만 아니라 운영 검증 과정에서 다양한 문제가 발생하였다.
 
@@ -993,6 +1275,9 @@ Spring Boot probe 설정 문제
 Prometheus custom metric 해석 문제
 ArgoCD와 HPA의 replicas drift
 CI build와 registry push의 차이
+latest tag와 GitOps 배포 추적 문제
+GitHub Actions 기반 Helm tag 자동 업데이트
+CI/CD workflow loop 방지
 GHCR image 기반 배포 전환
 ```
 
