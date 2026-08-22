@@ -43,16 +43,33 @@ FastPass의 목표는 단순한 API 구현이 아니라, 운영 환경에서 발
 
 ## Architecture
 
-```text
-Client
-  ↓
-fastpass-api
-  ├── PostgreSQL
-  └── Redis Queue
-          ↓
-    fastpass-worker
-          ↓
-      PostgreSQL
+```mermaid
+flowchart LR
+    Client[Client / k6 Load Test] --> API[fastpass-api<br/>Spring Boot API]
+
+    API --> DB[(PostgreSQL)]
+    API --> Redis[(Redis Queue)]
+
+    Redis --> Worker[fastpass-worker<br/>Queue Consumer]
+    Worker --> DB
+
+    API --> MetricsAPI[Actuator / Prometheus Metrics]
+    Worker --> MetricsWorker[Actuator / Prometheus Metrics]
+
+    MetricsAPI --> Prometheus[Prometheus]
+    MetricsWorker --> Prometheus
+
+    Prometheus --> Grafana[Grafana Dashboard]
+    Prometheus --> Alertmanager[Alertmanager]
+
+    GitHub[GitHub Repository] --> Actions[GitHub Actions CI]
+    Actions --> GHCR[GHCR<br/>Container Registry]
+    GitHub --> ArgoCD[ArgoCD GitOps]
+    ArgoCD --> K8s[Kubernetes Cluster]
+    GHCR --> K8s
+
+    K8s --> API
+    K8s --> Worker
 ```
 
 API와 Worker는 동일한 Spring Boot image를 사용하지만, Kubernetes Deployment를 분리하여 독립적으로 확장할 수 있도록 구성했습니다.
@@ -70,28 +87,22 @@ API와 Worker는 동일한 Spring Boot image를 사용하지만, Kubernetes Depl
 
 현재 FastPass의 전체 흐름은 다음과 같습니다.
 
-```text
-Code
-  ↓
-GitHub Actions CI
-  ↓
-Gradle Build
-  ↓
-Docker Image Build
-  ↓
-GHCR Image Push
-  ↓
-Helm Chart
-  ↓
-ArgoCD GitOps Sync
-  ↓
-Kubernetes Deployment
-  ↓
-HPA Autoscaling
-  ↓
-Prometheus / Grafana Monitoring
-  ↓
-Alertmanager Alerting
+```mermaid
+flowchart TD
+    A[Developer Push] --> B[GitHub Actions]
+
+    B --> C[Gradle Build]
+    C --> D[Docker Image Build]
+    D --> E[Push Image to GHCR]
+
+    E --> F[Helm Chart]
+    F --> G[ArgoCD Sync]
+    G --> H[Kubernetes Deployment]
+
+    H --> I[HPA Autoscaling]
+    H --> J[Prometheus Metrics]
+    J --> K[Grafana Dashboard]
+    J --> L[Alertmanager Alert]
 ```
 
 이를 통해 코드 변경부터 container image 생성, GitOps 배포, 운영 관측, 알림까지 이어지는 DevOps 흐름을 검증했습니다.
