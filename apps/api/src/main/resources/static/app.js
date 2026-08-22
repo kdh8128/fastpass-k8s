@@ -24,6 +24,7 @@ function toJsonBlock(data) {
 
 function statusBadge(status) {
   const normalized = String(status || "UNKNOWN").toLowerCase();
+
   return `<span class="badge ${normalized}">${status}</span>`;
 }
 
@@ -62,54 +63,98 @@ async function request(path, options = {}) {
 async function refreshStatus() {
   try {
     const health = await request("/actuator/health");
-    $("healthStatus").textContent = health.status || "UNKNOWN";
+    const status = health.status || "UNKNOWN";
+
+    $("healthStatus").textContent = status;
+    $("healthStatusSub").textContent = status;
   } catch {
     $("healthStatus").textContent = "DOWN";
+    $("healthStatusSub").textContent = "DOWN";
   }
 
   try {
     const queue = await request("/api/queue/applications/size");
-    $("queueSize").textContent = queue.size ?? "-";
+    const size = queue.size ?? "-";
+
+    $("queueSize").textContent = size;
+    $("queueSizeSub").textContent = size;
   } catch {
     $("queueSize").textContent = "-";
+    $("queueSizeSub").textContent = "-";
   }
 }
 
 async function refreshEvents() {
   const eventList = $("eventList");
-  eventList.innerHTML = `<p>이벤트를 불러오는 중...</p>`;
+  eventList.innerHTML = `<div class="empty">이벤트를 불러오는 중입니다...</div>`;
 
   try {
     const events = await request("/api/events");
 
     if (!events || events.length === 0) {
-      eventList.innerHTML = `<p>생성된 이벤트가 없습니다.</p>`;
+      eventList.innerHTML = `
+        <div class="empty">
+          아직 생성된 이벤트가 없습니다. 상단에서 이벤트를 먼저 생성해보세요.
+        </div>
+      `;
+      updateFeaturedEvent(null);
       return;
     }
 
-    eventList.innerHTML = events
+    const sortedEvents = [...events].sort((a, b) => b.id - a.id);
+    updateFeaturedEvent(sortedEvents[0]);
+
+    eventList.innerHTML = sortedEvents
       .map((event) => {
-        const remaining = event.capacity - event.appliedCount;
+        const remaining = Math.max(event.capacity - event.appliedCount, 0);
+        const status = remaining > 0 ? "READY" : "FAILED";
 
         return `
           <article class="event-card">
-            <h3>${event.title}</h3>
-            <p>${event.description || ""}</p>
+            ${statusBadge(status)}
+            <h3>${escapeHtml(event.title)}</h3>
+            <p>${escapeHtml(event.description || "이벤트 설명이 없습니다.")}</p>
+
             <div class="event-meta">
-              <span>ID: <strong>${event.id}</strong></span>
-              <span>Capacity: <strong>${event.capacity}</strong></span>
-              <span>Applied: <strong>${event.appliedCount}</strong></span>
-              <span>Remaining: <strong>${remaining}</strong></span>
-              <span>Start: <strong>${event.eventStartAt || "-"}</strong></span>
-              <span>${remaining > 0 ? statusBadge("READY") : statusBadge("FAILED")}</span>
+              <div>
+                <span>Event ID</span>
+                <strong>${event.id}</strong>
+              </div>
+              <div>
+                <span>Capacity</span>
+                <strong>${event.capacity}</strong>
+              </div>
+              <div>
+                <span>Applied</span>
+                <strong>${event.appliedCount}</strong>
+              </div>
+              <div>
+                <span>Remaining</span>
+                <strong>${remaining}</strong>
+              </div>
             </div>
           </article>
         `;
       })
       .join("");
   } catch (error) {
-    eventList.innerHTML = `<p class="result error">${error.message}</p>`;
+    eventList.innerHTML = `<div class="empty">${error.message}</div>`;
   }
+}
+
+function updateFeaturedEvent(event) {
+  if (!event) {
+    $("featuredTitle").textContent = "FastPass Open Event";
+    $("featuredCapacity").textContent = "3";
+    $("featuredApplied").textContent = "0";
+    $("featuredRemaining").textContent = "3";
+    return;
+  }
+
+  $("featuredTitle").textContent = event.title;
+  $("featuredCapacity").textContent = event.capacity;
+  $("featuredApplied").textContent = event.appliedCount;
+  $("featuredRemaining").textContent = Math.max(event.capacity - event.appliedCount, 0);
 }
 
 function setDefaultDateTime() {
@@ -124,6 +169,15 @@ function setDefaultDateTime() {
   const mi = String(now.getMinutes()).padStart(2, "0");
 
   $("eventStartAt").value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 $("eventForm").addEventListener("submit", async (event) => {
@@ -146,12 +200,14 @@ $("eventForm").addEventListener("submit", async (event) => {
 
     setResult(
       "eventCreateResult",
-      `이벤트 생성 완료<br/>${toJsonBlock(data)}`,
+      `이벤트가 생성되었습니다. Event ID: <strong>${data.id}</strong>${toJsonBlock(data)}`,
       "success"
     );
 
     await refreshEvents();
     await refreshStatus();
+
+    document.getElementById("events").scrollIntoView({ behavior: "smooth" });
   } catch (error) {
     setResult("eventCreateResult", error.message, "error");
   }
@@ -176,7 +232,7 @@ $("applyForm").addEventListener("submit", async (event) => {
 
     setResult(
       "applyResult",
-      `신청 요청 완료 ${statusBadge(data.status)}<br/>${toJsonBlock(data)}`,
+      `신청이 접수되었습니다. ${statusBadge(data.status)}${toJsonBlock(data)}`,
       "success"
     );
 
@@ -197,7 +253,7 @@ $("applicationLookupForm").addEventListener("submit", async (event) => {
 
     setResult(
       "applicationResult",
-      `현재 상태 ${statusBadge(data.status)}<br/>${toJsonBlock(data)}`,
+      `현재 신청 상태: ${statusBadge(data.status)}${toJsonBlock(data)}`,
       "success"
     );
 
@@ -207,9 +263,16 @@ $("applicationLookupForm").addEventListener("submit", async (event) => {
   }
 });
 
-$("refreshEventsBtn").addEventListener("click", refreshEvents);
 $("eventListRefreshBtn").addEventListener("click", refreshEvents);
 $("refreshStatusBtn").addEventListener("click", refreshStatus);
+
+$("heroCreateBtn").addEventListener("click", () => {
+  document.querySelector(".form-card").scrollIntoView({ behavior: "smooth" });
+});
+
+$("heroApplyBtn").addEventListener("click", () => {
+  document.getElementById("apply").scrollIntoView({ behavior: "smooth" });
+});
 
 setDefaultDateTime();
 refreshStatus();
