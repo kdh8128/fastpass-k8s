@@ -7,14 +7,14 @@ on:
     paths:
       - 'apps/api/**'
       - 'deploy/helm/fastpass/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/ci.yaml'
   pull_request:
     branches:
       - main
     paths:
       - 'apps/api/**'
       - 'deploy/helm/fastpass/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/ci.yaml'
 
 env:
   REGISTRY: ghcr.io
