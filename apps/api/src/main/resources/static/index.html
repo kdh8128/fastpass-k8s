@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Ticketing</title>
-  <link rel="stylesheet" href="./styles.css?v=1" />
+  <link rel="stylesheet" href="./styles.css?v=3" />
 </head>
 <body>
   <div class="page">
@@ -20,11 +20,11 @@
       <nav>
         <a href="#events">티켓 오픈</a>
         <a href="#selected">신청하기</a>
-        <a href="/admin/">Admin</a>
+        <a href="#lookup">결과 조회</a>
       </nav>
     </header>
 
-    <section class="hero">
+    <section class="hero hero-full">
       <div class="hero-copy">
         <span class="chip">LIVE QUEUE TICKETING</span>
         <h1>
@@ -39,39 +39,6 @@
         <div class="hero-actions">
           <a href="#events" class="primary-link">이벤트 보러가기</a>
           <button id="refreshBtn" class="ghost-btn">새로고침</button>
-        </div>
-      </div>
-
-      <div class="live-panel">
-        <div class="live-header">
-          <span class="pulse"></span>
-          <strong>FastPass Live</strong>
-        </div>
-
-        <div class="live-grid">
-          <div>
-            <span>API</span>
-            <strong id="apiHealth">-</strong>
-          </div>
-          <div>
-            <span>Queue</span>
-            <strong id="queueSize">-</strong>
-          </div>
-          <div>
-            <span>Open Events</span>
-            <strong id="openCount">-</strong>
-          </div>
-        </div>
-
-        <div class="ticket-visual">
-          <div class="ticket-line"></div>
-          <div>
-            <span>FASTPASS</span>
-            <strong>FIRST COME</strong>
-          </div>
-          <div class="barcode">
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
         </div>
       </div>
     </section>
@@ -135,7 +102,7 @@
         </div>
       </section>
 
-      <section class="lookup-section">
+      <section id="lookup" class="lookup-section">
         <div>
           <span class="chip">APPLICATION</span>
           <h2>신청 결과 조회</h2>
@@ -152,6 +119,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=1"></script>
+  <script src="./app.js?v=3"></script>
 </body>
 </html>

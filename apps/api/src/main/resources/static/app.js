@@ -3,6 +3,14 @@ const $ = (id) => document.getElementById(id);
 let selectedEvent = null;
 let eventsCache = [];
 
+function setTextIfExists(id, value) {
+  const element = $(id);
+
+  if (element) {
+    element.textContent = value;
+  }
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -32,6 +40,11 @@ function jsonBlock(data) {
 
 function setResult(id, message, type = "") {
   const element = $(id);
+
+  if (!element) {
+    return;
+  }
+
   element.className = `result ${type}`;
   element.innerHTML = message;
 }
@@ -71,16 +84,16 @@ async function request(path, options = {}) {
 async function refreshStatus() {
   try {
     const health = await request("/actuator/health");
-    $("apiHealth").textContent = health.status || "UNKNOWN";
+    setTextIfExists("apiHealth", health.status || "UNKNOWN");
   } catch {
-    $("apiHealth").textContent = "DOWN";
+    setTextIfExists("apiHealth", "DOWN");
   }
 
   try {
     const queue = await request("/api/queue/applications/size");
-    $("queueSize").textContent = queue.size ?? "-";
+    setTextIfExists("queueSize", queue.size ?? "-");
   } catch {
-    $("queueSize").textContent = "-";
+    setTextIfExists("queueSize", "-");
   }
 
   const openEvents = eventsCache.filter((event) => {
@@ -88,7 +101,7 @@ async function refreshStatus() {
     return remaining > 0;
   });
 
-  $("openCount").textContent = openEvents.length;
+  setTextIfExists("openCount", openEvents.length);
 }
 
 async function refreshEvents() {
@@ -106,9 +119,10 @@ async function refreshEvents() {
           관리자 페이지에서 이벤트를 먼저 생성해주세요.
         </div>
       `;
+
       selectedEvent = null;
       renderSelectedEvent();
-      refreshStatus();
+      await refreshStatus();
       return;
     }
 
@@ -124,11 +138,21 @@ async function refreshEvents() {
     });
 
     if (!selectedEvent) {
-      selectedEvent = eventsCache.find((event) => event.capacity - event.appliedCount > 0) || eventsCache[0];
+      selectedEvent =
+        eventsCache.find((event) => event.capacity - event.appliedCount > 0) ||
+        eventsCache[0];
+
+      renderSelectedEvent();
+    } else {
+      const refreshedSelectedEvent = eventsCache.find(
+        (event) => event.id === selectedEvent.id
+      );
+
+      selectedEvent = refreshedSelectedEvent || selectedEvent;
       renderSelectedEvent();
     }
 
-    refreshStatus();
+    await refreshStatus();
   } catch (error) {
     eventList.innerHTML = `<div class="empty">${error.message}</div>`;
   }
@@ -147,7 +171,9 @@ function renderEventCard(event) {
   return `
     <article class="event-card">
       ${badge(status)}
+
       <h3>${escapeHtml(event.title)}</h3>
+
       <p>${escapeHtml(event.description || "이벤트 설명이 없습니다.")}</p>
 
       <div class="progress">
@@ -203,7 +229,10 @@ function renderSelectedEvent() {
     return;
   }
 
-  const remaining = Math.max(selectedEvent.capacity - selectedEvent.appliedCount, 0);
+  const remaining = Math.max(
+    selectedEvent.capacity - selectedEvent.appliedCount,
+    0
+  );
 
   $("selectedTitle").textContent = selectedEvent.title;
   $("selectedDescription").textContent =
