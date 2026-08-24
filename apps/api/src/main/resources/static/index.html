@@ -3,231 +3,155 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FastPass - 선착순 이벤트 신청</title>
-  <link rel="stylesheet" href="./styles.css?v=2" />
+  <title>FastPass Ticketing</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
 </head>
 <body>
-  <div class="app-shell">
-    <nav class="nav">
-      <div class="brand">
-        <div class="brand-mark">F</div>
-        <div>
+  <div class="page">
+    <header class="topbar">
+      <a class="logo" href="/">
+        <span class="logo-mark">F</span>
+        <span>
           <strong>FastPass</strong>
-          <span>Event Ticketing</span>
-        </div>
-      </div>
+          <small>Ticketing</small>
+        </span>
+      </a>
 
-      <div class="nav-actions">
-        <a href="#events">Events</a>
-        <a href="#apply">Apply</a>
-        <a href="#status">Status</a>
-      </div>
-    </nav>
+      <nav>
+        <a href="#events">티켓 오픈</a>
+        <a href="#selected">신청하기</a>
+        <a href="/admin/">Admin</a>
+      </nav>
+    </header>
 
     <section class="hero">
-      <div class="hero-content">
-        <div class="label">Kubernetes 기반 선착순 이벤트 시스템</div>
+      <div class="hero-copy">
+        <span class="chip">LIVE QUEUE TICKETING</span>
         <h1>
-          대기열 기반<br />
-          선착순 신청 서비스
+          지금 오픈된<br />
+          선착순 이벤트
         </h1>
         <p>
-          FastPass는 짧은 시간에 신청이 몰리는 이벤트 상황을 가정하여,
-          Redis Queue와 Worker로 신청을 처리하고 Kubernetes 환경에서 확장성과 운영 상태를 검증하는 프로젝트입니다.
+          원하는 이벤트를 선택하고 이름만 입력하면 신청이 접수됩니다.
+          신청 요청은 Redis Queue에 적재되고 Worker가 순서대로 처리합니다.
         </p>
 
-        <div class="hero-buttons">
-          <button id="heroCreateBtn">이벤트 만들기</button>
-          <button id="heroApplyBtn" class="ghost">바로 신청하기</button>
+        <div class="hero-actions">
+          <a href="#events" class="primary-link">이벤트 보러가기</a>
+          <button id="refreshBtn" class="ghost-btn">새로고침</button>
+        </div>
+      </div>
+
+      <div class="live-panel">
+        <div class="live-header">
+          <span class="pulse"></span>
+          <strong>FastPass Live</strong>
         </div>
 
-        <div class="hero-stats">
+        <div class="live-grid">
           <div>
             <span>API</span>
-            <strong id="healthStatus">-</strong>
+            <strong id="apiHealth">-</strong>
           </div>
           <div>
             <span>Queue</span>
             <strong id="queueSize">-</strong>
           </div>
           <div>
-            <span>Mode</span>
-            <strong>Redis Queue</strong>
+            <span>Open Events</span>
+            <strong id="openCount">-</strong>
           </div>
         </div>
-      </div>
 
-      <div class="ticket-preview">
-        <div class="ticket-top">
-          <span>FASTPASS LIVE</span>
-          <strong>OPEN</strong>
-        </div>
-
-        <div class="ticket-title">
-          <p>Featured Event</p>
-          <h2 id="featuredTitle">FastPass Open Event</h2>
-        </div>
-
-        <div class="ticket-info">
+        <div class="ticket-visual">
+          <div class="ticket-line"></div>
           <div>
-            <span>Capacity</span>
-            <strong id="featuredCapacity">3</strong>
+            <span>FASTPASS</span>
+            <strong>FIRST COME</strong>
           </div>
-          <div>
-            <span>Applied</span>
-            <strong id="featuredApplied">0</strong>
+          <div class="barcode">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           </div>
-          <div>
-            <span>Remaining</span>
-            <strong id="featuredRemaining">3</strong>
-          </div>
-        </div>
-
-        <div class="ticket-barcode">
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
     </section>
 
     <main>
-      <section id="status" class="status-strip">
-        <div class="status-item">
-          <span class="dot online"></span>
-          <div>
-            <p>API Health</p>
-            <strong id="healthStatusSub">-</strong>
-          </div>
-        </div>
-
-        <div class="status-item">
-          <span class="dot queue"></span>
-          <div>
-            <p>Current Queue Size</p>
-            <strong id="queueSizeSub">-</strong>
-          </div>
-        </div>
-
-        <div class="status-item">
-          <span class="dot deploy"></span>
-          <div>
-            <p>Runtime</p>
-            <strong>Kubernetes</strong>
-          </div>
-        </div>
-
-        <button id="refreshStatusBtn" class="small-btn">상태 새로고침</button>
-      </section>
-
-      <section class="section-head">
+      <section id="events" class="section-title">
         <div>
-          <span class="label">Create</span>
-          <h2>이벤트 생성</h2>
-          <p>관리자가 선착순 이벤트를 생성하는 영역입니다.</p>
+          <span class="chip">EVENTS</span>
+          <h2>티켓팅 목록</h2>
+          <p>현재 신청 가능한 이벤트를 선택하세요.</p>
         </div>
+
+        <button id="eventRefreshBtn" class="small-btn">목록 새로고침</button>
       </section>
 
-      <section class="card-grid">
-        <div class="card form-card">
-          <form id="eventForm">
-            <label>
-              이벤트 제목
-              <input id="eventTitle" type="text" value="FastPass Open Event" required />
-            </label>
+      <section id="eventList" class="event-list">
+        <div class="empty">이벤트를 불러오는 중입니다...</div>
+      </section>
 
-            <label>
-              이벤트 설명
-              <input id="eventDescription" type="text" value="선착순 이벤트 신청 테스트" required />
-            </label>
+      <section id="selected" class="apply-section">
+        <div class="selected-card">
+          <div class="selected-info">
+            <span class="chip">SELECTED EVENT</span>
+            <h2 id="selectedTitle">이벤트를 선택해주세요</h2>
+            <p id="selectedDescription">
+              위 티켓팅 목록에서 신청할 이벤트를 선택하면 상세 정보가 표시됩니다.
+            </p>
 
-            <div class="form-row">
-              <label>
-                정원
-                <input id="eventCapacity" type="number" value="3" min="1" required />
-              </label>
-
-              <label>
-                시작 시간
-                <input id="eventStartAt" type="datetime-local" required />
-              </label>
+            <div class="selected-meta">
+              <div>
+                <span>Event ID</span>
+                <strong id="selectedEventId">-</strong>
+              </div>
+              <div>
+                <span>Capacity</span>
+                <strong id="selectedCapacity">-</strong>
+              </div>
+              <div>
+                <span>Applied</span>
+                <strong id="selectedApplied">-</strong>
+              </div>
+              <div>
+                <span>Remaining</span>
+                <strong id="selectedRemaining">-</strong>
+              </div>
             </div>
+          </div>
 
-            <button type="submit" class="full-btn">이벤트 생성</button>
-          </form>
-
-          <div id="eventCreateResult" class="result"></div>
-        </div>
-
-        <div class="card guide-card">
-          <span class="guide-badge">Scenario</span>
-          <h3>선착순 처리 흐름</h3>
-          <ol>
-            <li>신청 요청을 API가 수신합니다.</li>
-            <li>신청 상태를 PENDING으로 저장합니다.</li>
-            <li>applicationId를 Redis Queue에 적재합니다.</li>
-            <li>Worker가 Queue를 소비하며 SUCCESS/FAILED를 결정합니다.</li>
-          </ol>
-        </div>
-      </section>
-
-      <section id="apply" class="section-head">
-        <div>
-          <span class="label">Apply</span>
-          <h2>이벤트 신청</h2>
-          <p>사용자가 이벤트 ID와 이름을 입력하여 선착순 이벤트에 신청합니다.</p>
-        </div>
-      </section>
-
-      <section class="apply-layout">
-        <div class="card apply-card">
-          <form id="applyForm">
-            <label>
-              이벤트 ID
-              <input id="applyEventId" type="number" placeholder="이벤트 ID 입력" required />
-            </label>
-
+          <form id="applyForm" class="apply-form">
             <label>
               신청자 이름
               <input id="applicantName" type="text" value="user-1" required />
             </label>
 
-            <button type="submit" class="full-btn accent">신청하기</button>
+            <button id="applyBtn" type="submit" disabled>
+              이벤트 선택 후 신청 가능
+            </button>
+
+            <div id="applyResult" class="result"></div>
           </form>
-
-          <div id="applyResult" class="result"></div>
-        </div>
-
-        <div class="card lookup-card">
-          <h3>신청 상태 조회</h3>
-          <p>신청 후 발급된 applicationId로 처리 결과를 확인할 수 있습니다.</p>
-
-          <form id="applicationLookupForm">
-            <label>
-              신청 ID
-              <input id="applicationId" type="number" placeholder="신청 ID 입력" required />
-            </label>
-
-            <button type="submit" class="full-btn dark">상태 조회</button>
-          </form>
-
-          <div id="applicationResult" class="result"></div>
         </div>
       </section>
 
-      <section id="events" class="section-head with-action">
+      <section class="lookup-section">
         <div>
-          <span class="label">Events</span>
-          <h2>이벤트 목록</h2>
-          <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
+          <span class="chip">APPLICATION</span>
+          <h2>신청 결과 조회</h2>
+          <p>신청 후 발급된 신청 ID로 처리 상태를 확인할 수 있습니다.</p>
         </div>
 
-        <button id="eventListRefreshBtn" class="small-btn">이벤트 새로고침</button>
-      </section>
+        <form id="lookupForm" class="lookup-form">
+          <input id="applicationId" type="number" placeholder="신청 ID 입력" required />
+          <button type="submit">조회</button>
+        </form>
 
-      <section id="eventList" class="event-list"></section>
+        <div id="lookupResult" class="result wide"></div>
+      </section>
     </main>
   </div>
 
-  <script src="./app.js?v=2"></script>
+  <script src="./app.js?v=1"></script>
 </body>
 </html>
