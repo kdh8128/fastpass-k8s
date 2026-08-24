@@ -33,7 +33,13 @@ public class AdminBasicAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
 
-        return !uri.startsWith("/admin");
+        if (!uri.startsWith("/admin")) {
+            return true;
+        }
+
+        return uri.equals("/admin/styles.css")
+                || uri.equals("/admin/app.js")
+                || uri.equals("/admin/favicon.ico");
     }
 
     @Override
