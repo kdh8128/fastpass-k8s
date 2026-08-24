@@ -14,6 +14,11 @@ function normalizeDateTime(value) {
 
 function setResult(elementId, message, type = "") {
   const element = $(elementId);
+
+  if (!element) {
+    return;
+  }
+
   element.className = `result ${type}`;
   element.innerHTML = message;
 }
@@ -24,8 +29,16 @@ function toJsonBlock(data) {
 
 function statusBadge(status) {
   const normalized = String(status || "UNKNOWN").toLowerCase();
-
   return `<span class="badge ${normalized}">${status}</span>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 async function request(path, options = {}) {
@@ -63,24 +76,16 @@ async function request(path, options = {}) {
 async function refreshStatus() {
   try {
     const health = await request("/actuator/health");
-    const status = health.status || "UNKNOWN";
-
-    $("healthStatus").textContent = status;
-    $("healthStatusSub").textContent = status;
+    $("healthStatus").textContent = health.status || "UNKNOWN";
   } catch {
     $("healthStatus").textContent = "DOWN";
-    $("healthStatusSub").textContent = "DOWN";
   }
 
   try {
     const queue = await request("/api/queue/applications/size");
-    const size = queue.size ?? "-";
-
-    $("queueSize").textContent = size;
-    $("queueSizeSub").textContent = size;
+    $("queueSize").textContent = queue.size ?? "-";
   } catch {
     $("queueSize").textContent = "-";
-    $("queueSizeSub").textContent = "-";
   }
 }
 
@@ -94,15 +99,13 @@ async function refreshEvents() {
     if (!events || events.length === 0) {
       eventList.innerHTML = `
         <div class="empty">
-          아직 생성된 이벤트가 없습니다. 상단에서 이벤트를 먼저 생성해보세요.
+          아직 생성된 이벤트가 없습니다.
         </div>
       `;
-      updateFeaturedEvent(null);
       return;
     }
 
     const sortedEvents = [...events].sort((a, b) => b.id - a.id);
-    updateFeaturedEvent(sortedEvents[0]);
 
     eventList.innerHTML = sortedEvents
       .map((event) => {
@@ -142,22 +145,13 @@ async function refreshEvents() {
   }
 }
 
-function updateFeaturedEvent(event) {
-  if (!event) {
-    $("featuredTitle").textContent = "FastPass Open Event";
-    $("featuredCapacity").textContent = "3";
-    $("featuredApplied").textContent = "0";
-    $("featuredRemaining").textContent = "3";
+function setDefaultDateTime() {
+  const input = $("eventStartAt");
+
+  if (!input) {
     return;
   }
 
-  $("featuredTitle").textContent = event.title;
-  $("featuredCapacity").textContent = event.capacity;
-  $("featuredApplied").textContent = event.appliedCount;
-  $("featuredRemaining").textContent = Math.max(event.capacity - event.appliedCount, 0);
-}
-
-function setDefaultDateTime() {
   const now = new Date();
   now.setDate(now.getDate() + 1);
   now.setHours(10, 0, 0, 0);
@@ -168,16 +162,7 @@ function setDefaultDateTime() {
   const hh = String(now.getHours()).padStart(2, "0");
   const mi = String(now.getMinutes()).padStart(2, "0");
 
-  $("eventStartAt").value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  input.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
 $("eventForm").addEventListener("submit", async (event) => {
@@ -264,15 +249,8 @@ $("applicationLookupForm").addEventListener("submit", async (event) => {
 });
 
 $("eventListRefreshBtn").addEventListener("click", refreshEvents);
+$("refreshEventsBtn").addEventListener("click", refreshEvents);
 $("refreshStatusBtn").addEventListener("click", refreshStatus);
-
-$("heroCreateBtn").addEventListener("click", () => {
-  document.querySelector(".form-card").scrollIntoView({ behavior: "smooth" });
-});
-
-$("heroApplyBtn").addEventListener("click", () => {
-  document.getElementById("apply").scrollIntoView({ behavior: "smooth" });
-});
 
 setDefaultDateTime();
 refreshStatus();
