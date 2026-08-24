@@ -12,6 +12,25 @@ function normalizeDateTime(value) {
   return value;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function toJsonBlock(data) {
+  return `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+function statusBadge(status) {
+  const normalized = String(status || "UNKNOWN").toLowerCase();
+
+  return `<span class="badge ${normalized}">${status}</span>`;
+}
+
 function setResult(elementId, message, type = "") {
   const element = $(elementId);
 
@@ -21,24 +40,6 @@ function setResult(elementId, message, type = "") {
 
   element.className = `result ${type}`;
   element.innerHTML = message;
-}
-
-function toJsonBlock(data) {
-  return `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-}
-
-function statusBadge(status) {
-  const normalized = String(status || "UNKNOWN").toLowerCase();
-  return `<span class="badge ${normalized}">${status}</span>`;
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 async function request(path, options = {}) {
@@ -74,23 +75,41 @@ async function request(path, options = {}) {
 }
 
 async function refreshStatus() {
+  const healthStatus = $("healthStatus");
+  const queueSize = $("queueSize");
+
   try {
     const health = await request("/actuator/health");
-    $("healthStatus").textContent = health.status || "UNKNOWN";
+
+    if (healthStatus) {
+      healthStatus.textContent = health.status || "UNKNOWN";
+    }
   } catch {
-    $("healthStatus").textContent = "DOWN";
+    if (healthStatus) {
+      healthStatus.textContent = "DOWN";
+    }
   }
 
   try {
     const queue = await request("/api/queue/applications/size");
-    $("queueSize").textContent = queue.size ?? "-";
+
+    if (queueSize) {
+      queueSize.textContent = queue.size ?? "-";
+    }
   } catch {
-    $("queueSize").textContent = "-";
+    if (queueSize) {
+      queueSize.textContent = "-";
+    }
   }
 }
 
 async function refreshEvents() {
   const eventList = $("eventList");
+
+  if (!eventList) {
+    return;
+  }
+
   eventList.innerHTML = `<div class="empty">이벤트를 불러오는 중입니다...</div>`;
 
   try {
@@ -115,7 +134,9 @@ async function refreshEvents() {
         return `
           <article class="event-card">
             ${statusBadge(status)}
+
             <h3>${escapeHtml(event.title)}</h3>
+
             <p>${escapeHtml(event.description || "이벤트 설명이 없습니다.")}</p>
 
             <div class="event-meta">
@@ -123,14 +144,17 @@ async function refreshEvents() {
                 <span>Event ID</span>
                 <strong>${event.id}</strong>
               </div>
+
               <div>
                 <span>Capacity</span>
                 <strong>${event.capacity}</strong>
               </div>
+
               <div>
                 <span>Applied</span>
                 <strong>${event.appliedCount}</strong>
               </div>
+
               <div>
                 <span>Remaining</span>
                 <strong>${remaining}</strong>
@@ -165,95 +189,157 @@ function setDefaultDateTime() {
   input.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-$("eventForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
+function bindEventForm() {
+  const eventForm = $("eventForm");
 
-  const payload = {
-    title: $("eventTitle").value,
-    description: $("eventDescription").value,
-    capacity: Number($("eventCapacity").value),
-    eventStartAt: normalizeDateTime($("eventStartAt").value),
-  };
-
-  try {
-    const data = await request("/api/events", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    $("applyEventId").value = data.id;
-
-    setResult(
-      "eventCreateResult",
-      `이벤트가 생성되었습니다. Event ID: <strong>${data.id}</strong>${toJsonBlock(data)}`,
-      "success"
-    );
-
-    await refreshEvents();
-    await refreshStatus();
-
-    document.getElementById("events").scrollIntoView({ behavior: "smooth" });
-  } catch (error) {
-    setResult("eventCreateResult", error.message, "error");
+  if (!eventForm) {
+    return;
   }
-});
 
-$("applyForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
+  eventForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-  const eventId = $("applyEventId").value;
+    const payload = {
+      title: $("eventTitle").value,
+      description: $("eventDescription").value,
+      capacity: Number($("eventCapacity").value),
+      eventStartAt: normalizeDateTime($("eventStartAt").value),
+    };
 
-  const payload = {
-    applicantName: $("applicantName").value,
-  };
+    try {
+      const data = await request("/api/events", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-  try {
-    const data = await request(`/api/events/${eventId}/apply`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+      const applyEventId = $("applyEventId");
 
-    $("applicationId").value = data.id;
+      if (applyEventId) {
+        applyEventId.value = data.id;
+      }
 
-    setResult(
-      "applyResult",
-      `신청이 접수되었습니다. ${statusBadge(data.status)}${toJsonBlock(data)}`,
-      "success"
-    );
+      setResult(
+        "eventCreateResult",
+        `이벤트가 생성되었습니다. Event ID: <strong>${data.id}</strong>${toJsonBlock(data)}`,
+        "success"
+      );
 
-    await refreshEvents();
-    await refreshStatus();
-  } catch (error) {
-    setResult("applyResult", error.message, "error");
+      await refreshEvents();
+      await refreshStatus();
+
+      const eventsSection = $("events");
+
+      if (eventsSection) {
+        eventsSection.scrollIntoView({ behavior: "smooth" });
+      }
+    } catch (error) {
+      setResult("eventCreateResult", error.message, "error");
+    }
+  });
+}
+
+function bindApplyForm() {
+  const applyForm = $("applyForm");
+
+  if (!applyForm) {
+    return;
   }
-});
 
-$("applicationLookupForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
+  applyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-  const applicationId = $("applicationId").value;
+    const eventId = $("applyEventId").value;
 
-  try {
-    const data = await request(`/api/applications/${applicationId}`);
+    const payload = {
+      applicantName: $("applicantName").value,
+    };
 
-    setResult(
-      "applicationResult",
-      `현재 신청 상태: ${statusBadge(data.status)}${toJsonBlock(data)}`,
-      "success"
-    );
+    try {
+      const data = await request(`/api/events/${eventId}/apply`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-    await refreshStatus();
-  } catch (error) {
-    setResult("applicationResult", error.message, "error");
+      const applicationId = $("applicationId");
+
+      if (applicationId) {
+        applicationId.value = data.id;
+      }
+
+      setResult(
+        "applyResult",
+        `신청이 접수되었습니다. ${statusBadge(data.status)}${toJsonBlock(data)}`,
+        "success"
+      );
+
+      await refreshEvents();
+      await refreshStatus();
+    } catch (error) {
+      setResult("applyResult", error.message, "error");
+    }
+  });
+}
+
+function bindLookupForm() {
+  const lookupForm = $("applicationLookupForm");
+
+  if (!lookupForm) {
+    return;
   }
-});
 
-$("eventListRefreshBtn").addEventListener("click", refreshEvents);
-$("refreshEventsBtn").addEventListener("click", refreshEvents);
-$("refreshStatusBtn").addEventListener("click", refreshStatus);
+  lookupForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-setDefaultDateTime();
-refreshStatus();
-refreshEvents();
+    const applicationId = $("applicationId").value;
 
-setInterval(refreshStatus, 5000);
+    try {
+      const data = await request(`/api/applications/${applicationId}`);
+
+      setResult(
+        "applicationResult",
+        `현재 신청 상태: ${statusBadge(data.status)}${toJsonBlock(data)}`,
+        "success"
+      );
+
+      await refreshStatus();
+    } catch (error) {
+      setResult("applicationResult", error.message, "error");
+    }
+  });
+}
+
+function bindButtons() {
+  const refreshEventsBtn = $("refreshEventsBtn");
+
+  if (refreshEventsBtn) {
+    refreshEventsBtn.addEventListener("click", refreshEvents);
+  }
+
+  const eventListRefreshBtn = $("eventListRefreshBtn");
+
+  if (eventListRefreshBtn) {
+    eventListRefreshBtn.addEventListener("click", refreshEvents);
+  }
+
+  const refreshStatusBtn = $("refreshStatusBtn");
+
+  if (refreshStatusBtn) {
+    refreshStatusBtn.addEventListener("click", refreshStatus);
+  }
+}
+
+function init() {
+  setDefaultDateTime();
+
+  bindEventForm();
+  bindApplyForm();
+  bindLookupForm();
+  bindButtons();
+
+  refreshStatus();
+  refreshEvents();
+
+  setInterval(refreshStatus, 5000);
+}
+
+init();
