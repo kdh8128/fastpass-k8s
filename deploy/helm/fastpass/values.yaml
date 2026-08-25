@@ -2,7 +2,7 @@ namespace: fastpass
 
 image:
   repository: ghcr.io/kdh8128/fastpass-k8s-api
-  tag: 0712a5c45950c64b298d3630be94d17f391a9185
+  tag: 1e8243cab54ac426eae1a267b8afe0ff2b2c53ea
   pullPolicy: IfNotPresent
 
 api:
