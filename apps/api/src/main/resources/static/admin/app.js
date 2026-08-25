@@ -309,22 +309,16 @@ function bindLookupForm() {
 }
 
 function bindButtons() {
-  const refreshEventsBtn = $("refreshEventsBtn");
+  const refreshStatusBtn = $("refreshStatusBtn");
 
-  if (refreshEventsBtn) {
-    refreshEventsBtn.addEventListener("click", refreshEvents);
+  if (refreshStatusBtn) {
+    refreshStatusBtn.addEventListener("click", refreshStatus);
   }
 
   const eventListRefreshBtn = $("eventListRefreshBtn");
 
   if (eventListRefreshBtn) {
     eventListRefreshBtn.addEventListener("click", refreshEvents);
-  }
-
-  const refreshStatusBtn = $("refreshStatusBtn");
-
-  if (refreshStatusBtn) {
-    refreshStatusBtn.addEventListener("click", refreshStatus);
   }
 }
 

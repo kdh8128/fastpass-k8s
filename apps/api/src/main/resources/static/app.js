@@ -3,14 +3,6 @@ const $ = (id) => document.getElementById(id);
 let selectedEvent = null;
 let eventsCache = [];
 
-function setTextIfExists(id, value) {
-  const element = $(id);
-
-  if (element) {
-    element.textContent = value;
-  }
-}
-
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -83,17 +75,9 @@ async function request(path, options = {}) {
 
 async function refreshStatus() {
   try {
-    const health = await request("/actuator/health");
-    setTextIfExists("apiHealth", health.status || "UNKNOWN");
+    await request("/actuator/health");
   } catch {
-    setTextIfExists("apiHealth", "DOWN");
-  }
-
-  try {
-    const queue = await request("/api/queue/applications/size");
-    setTextIfExists("queueSize", queue.size ?? "-");
-  } catch {
-    setTextIfExists("queueSize", "-");
+    // 사용자 페이지에서는 별도 health 표시 없음
   }
 
   const openEvents = eventsCache.filter((event) => {
@@ -101,7 +85,11 @@ async function refreshStatus() {
     return remaining > 0;
   });
 
-  setTextIfExists("openCount", openEvents.length);
+  const openCount = $("openCount");
+
+  if (openCount) {
+    openCount.textContent = openEvents.length;
+  }
 }
 
 async function refreshEvents() {
@@ -119,7 +107,6 @@ async function refreshEvents() {
           관리자 페이지에서 이벤트를 먼저 생성해주세요.
         </div>
       `;
-
       selectedEvent = null;
       renderSelectedEvent();
       await refreshStatus();

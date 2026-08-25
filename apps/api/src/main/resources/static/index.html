@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Ticketing</title>
-  <link rel="stylesheet" href="./styles.css?v=3" />
+  <link rel="stylesheet" href="./styles.css?v=1" />
 </head>
 <body>
   <div class="page">
@@ -24,16 +24,15 @@
       </nav>
     </header>
 
-    <section class="hero hero-full">
+    <section class="hero">
       <div class="hero-copy">
         <span class="chip">LIVE QUEUE TICKETING</span>
         <h1>
           지금 오픈된<br />
           선착순 이벤트
         </h1>
-        <p>
-          원하는 이벤트를 선택하고 이름만 입력하면 신청이 접수됩니다.
-          신청 요청은 Redis Queue에 적재되고 Worker가 순서대로 처리합니다.
+        <p class="hero-text">
+          원하는 이벤트를 선택하고 이름만 입력하면 신청이 접수됩니다. 신청 요청은 Redis Queue에 적재되고 Worker가 순서대로 처리합니다.
         </p>
 
         <div class="hero-actions">
@@ -119,6 +118,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=3"></script>
+  <script src="./app.js?v=1"></script>
 </body>
 </html>
