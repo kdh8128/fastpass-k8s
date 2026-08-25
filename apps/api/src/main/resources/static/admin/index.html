@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Admin</title>
-  <link rel="stylesheet" href="./styles.css?v=5" />
+  <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
   <div class="page">
@@ -26,7 +26,7 @@
       </nav>
     </header>
 
-    <main>
+    <main class="admin-layout">
       <section class="hero">
         <div class="hero-copy">
           <div>
@@ -61,19 +61,19 @@
         </div>
       </section>
 
-      <section id="create" class="section-heading">
-        <div>
-          <span class="eyebrow">CREATE</span>
-          <h2>이벤트 생성</h2>
-          <p>사용자 페이지에 표시될 선착순 이벤트 정보를 입력합니다.</p>
+      <section id="create" class="section-card">
+        <div class="panel-header section-header">
+          <div>
+            <span class="eyebrow">CREATE</span>
+            <h2>이벤트 생성</h2>
+            <p>사용자 페이지에 표시될 선착순 이벤트 정보를 입력합니다.</p>
+          </div>
         </div>
-      </section>
 
-      <section class="form-section">
         <form id="eventForm" class="form-card">
           <div class="field">
             <label for="eventTitle">이벤트 제목</label>
-            <p>사용자 페이지의 티켓팅 카드에 표시됩니다.</p>
+            <p>사용자 페이지의 티켓 카드 제목으로 노출됩니다.</p>
             <input id="eventTitle" type="text" value="FastPass Open Event" required />
           </div>
 
@@ -108,9 +108,9 @@
         <div id="eventCreateResult" class="result"></div>
       </section>
 
-      <section class="admin-grid">
-        <section id="apply" class="panel">
-          <div class="panel-header">
+      <div class="admin-grid">
+        <section id="apply" class="section-card compact-card">
+          <div class="panel-header section-header">
             <div>
               <span class="eyebrow">APPLY TEST</span>
               <h2>신청 테스트</h2>
@@ -121,11 +121,13 @@
           <form id="applyForm" class="small-form">
             <div class="field">
               <label for="applyEventId">이벤트 ID</label>
+              <p>테스트할 이벤트 번호를 입력합니다.</p>
               <input id="applyEventId" type="number" placeholder="예: 1" required />
             </div>
 
             <div class="field">
               <label for="applicantName">신청자 이름</label>
+              <p>테스트 요청에 사용할 신청자 이름입니다.</p>
               <input id="applicantName" type="text" value="admin-test-user" required />
             </div>
 
@@ -135,8 +137,8 @@
           <div id="applyResult" class="result"></div>
         </section>
 
-        <section id="lookup" class="panel">
-          <div class="panel-header">
+        <section id="lookup" class="section-card compact-card">
+          <div class="panel-header section-header">
             <div>
               <span class="eyebrow">LOOKUP</span>
               <h2>신청 상태 조회</h2>
@@ -147,6 +149,7 @@
           <form id="applicationLookupForm" class="small-form">
             <div class="field">
               <label for="applicationId">신청 ID</label>
+              <p>상태를 조회할 신청 번호를 입력합니다.</p>
               <input id="applicationId" type="number" placeholder="예: 1" required />
             </div>
 
@@ -155,26 +158,28 @@
 
           <div id="applicationResult" class="result"></div>
         </section>
-      </section>
+      </div>
 
-      <section id="events" class="section-heading events-heading">
-        <div>
-          <span class="eyebrow">EVENTS</span>
-          <h2>이벤트 목록</h2>
-          <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
+      <section id="events" class="section-card">
+        <div class="panel-header section-header section-header-row">
+          <div>
+            <span class="eyebrow">EVENTS</span>
+            <h2>이벤트 목록</h2>
+            <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
+          </div>
+
+          <button id="eventListRefreshBtn" type="button" class="btn secondary small">
+            목록 새로고침
+          </button>
         </div>
 
-        <button id="eventListRefreshBtn" type="button" class="btn secondary small">
-          목록 새로고침
-        </button>
-      </section>
-
-      <section id="eventList" class="event-list">
-        <div class="empty">이벤트를 불러오는 중입니다...</div>
+        <div id="eventList" class="event-list">
+          <div class="empty">이벤트를 불러오는 중입니다...</div>
+        </div>
       </section>
     </main>
   </div>
 
-  <script src="./app.js?v=5"></script>
+  <script src="./app.js?v=6"></script>
 </body>
 </html>
