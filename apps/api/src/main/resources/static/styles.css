@@ -5,7 +5,6 @@
 :root {
   --bg: #080b14;
   --surface: #0d1324;
-  --surface-2: #11182b;
   --card: rgba(255, 255, 255, 0.055);
   --card-hover: rgba(255, 255, 255, 0.075);
   --border: rgba(255, 255, 255, 0.11);
@@ -36,8 +35,8 @@ body {
     "Segoe UI",
     sans-serif;
   background:
-    radial-gradient(circle at 12% 0%, rgba(91, 140, 255, 0.18), transparent 30%),
-    radial-gradient(circle at 90% 5%, rgba(124, 92, 255, 0.16), transparent 32%),
+    radial-gradient(circle at 12% 0%, rgba(91, 140, 255, 0.16), transparent 30%),
+    radial-gradient(circle at 90% 5%, rgba(124, 92, 255, 0.14), transparent 32%),
     linear-gradient(135deg, #070b16 0%, #0d1324 48%, #11112c 100%);
   color: var(--text);
 }
@@ -88,7 +87,7 @@ button {
   color: #fff;
   font-size: 22px;
   font-weight: 900;
-  box-shadow: 0 10px 28px rgba(91, 140, 255, 0.26);
+  box-shadow: 0 10px 28px rgba(91, 140, 255, 0.24);
 }
 
 .logo strong {
@@ -121,7 +120,6 @@ button {
   color: var(--muted-2);
   font-size: 14px;
   font-weight: 700;
-  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .topbar nav a:hover {
@@ -134,16 +132,16 @@ button {
 }
 
 .hero-copy {
-  min-height: 480px;
+  min-height: 420px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 64px;
+  padding: 56px;
   border: 1px solid var(--border);
   border-radius: 28px;
   background:
-    radial-gradient(circle at 84% 22%, rgba(124, 92, 255, 0.18), transparent 34%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+    radial-gradient(circle at 84% 22%, rgba(124, 92, 255, 0.15), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
   box-shadow: var(--shadow);
 }
 
@@ -164,7 +162,7 @@ button {
 h1 {
   margin: 0;
   max-width: 860px;
-  font-size: clamp(54px, 7vw, 96px);
+  font-size: clamp(50px, 7vw, 92px);
   line-height: 0.96;
   letter-spacing: -0.075em;
 }
@@ -198,11 +196,6 @@ h1 {
   padding: 0 16px;
   color: #fff;
   font-weight: 800;
-  transition:
-    transform 0.16s ease,
-    background 0.16s ease,
-    border-color 0.16s ease,
-    opacity 0.16s ease;
 }
 
 .primary-link,
@@ -273,14 +266,9 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--card);
-  transition:
-    transform 0.16s ease,
-    background 0.16s ease,
-    border-color 0.16s ease;
 }
 
 .event-card:hover {
-  transform: translateY(-2px);
   background: var(--card-hover);
   border-color: var(--border-strong);
 }
@@ -297,12 +285,14 @@ button:disabled {
   letter-spacing: 0.03em;
 }
 
-.badge.ready {
+.badge.ready,
+.badge.success {
   background: rgba(52, 211, 153, 0.13);
   color: #86efac;
 }
 
-.badge.failed {
+.badge.failed,
+.badge.error {
   background: rgba(251, 113, 133, 0.13);
   color: #fda4af;
 }
@@ -310,11 +300,6 @@ button:disabled {
 .badge.pending {
   background: rgba(250, 204, 21, 0.14);
   color: #fde68a;
-}
-
-.badge.success {
-  background: rgba(52, 211, 153, 0.13);
-  color: #86efac;
 }
 
 .event-card h3 {
@@ -355,14 +340,16 @@ button:disabled {
   margin-bottom: 14px;
 }
 
-.event-meta div {
+.event-meta div,
+.selected-meta div {
   padding: 11px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.16);
 }
 
-.event-meta span {
+.event-meta span,
+.selected-meta span {
   display: block;
   margin-bottom: 4px;
   color: var(--muted);
@@ -401,21 +388,6 @@ button:disabled {
   margin-top: 22px;
 }
 
-.selected-meta div {
-  padding: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 13px;
-  background: rgba(0, 0, 0, 0.16);
-}
-
-.selected-meta span {
-  display: block;
-  margin-bottom: 5px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .selected-meta strong {
   font-size: 18px;
 }
@@ -448,20 +420,11 @@ input {
   padding: 0 13px;
   background: rgba(7, 11, 22, 0.72);
   color: #fff;
-  transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    background 0.16s ease;
-}
-
-input::placeholder {
-  color: rgba(255, 255, 255, 0.36);
 }
 
 input:focus {
   border-color: rgba(91, 140, 255, 0.75);
   box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.13);
-  background: rgba(7, 11, 22, 0.92);
 }
 
 .lookup-section {
