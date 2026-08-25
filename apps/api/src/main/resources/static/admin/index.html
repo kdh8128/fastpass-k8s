@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Admin</title>
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <link rel="stylesheet" href="./styles.css?v=7" />
 </head>
 <body>
   <div class="page">
@@ -26,48 +26,46 @@
       </nav>
     </header>
 
-    <main class="admin-layout">
-      <section class="hero">
-        <div class="hero-copy">
-          <div>
-            <span class="eyebrow">KUBERNETES EVENT APPLICATION SYSTEM</span>
-            <h1>FastPass Admin</h1>
-            <p class="hero-text">
-              선착순 이벤트를 생성하고 Redis Queue, Worker, Kubernetes 기반 처리 상태를 확인하는 관리자 페이지입니다.
-            </p>
+    <main class="main-stack">
+      <section class="hero-card">
+        <div class="hero-main">
+          <span class="eyebrow">KUBERNETES EVENT APPLICATION SYSTEM</span>
+          <h1>FastPass Admin</h1>
+          <p>
+            선착순 이벤트를 생성하고 Redis Queue, Worker, Kubernetes 기반 처리 상태를 확인하는 관리자 페이지입니다.
+          </p>
 
-            <div class="hero-actions">
-              <a href="#create" class="btn primary">이벤트 생성하기</a>
-              <button id="refreshStatusBtn" type="button" class="btn secondary">운영 상태 확인</button>
-            </div>
+          <div class="hero-actions">
+            <a href="#create" class="btn primary">이벤트 생성하기</a>
+            <button id="refreshStatusBtn" type="button" class="btn secondary">
+              운영 상태 확인
+            </button>
+          </div>
+        </div>
+
+        <aside class="status-panel">
+          <div class="status-card">
+            <span>API Health</span>
+            <strong id="healthStatus">-</strong>
           </div>
 
-          <aside class="status-panel">
-            <div class="status-card">
-              <span>API Health</span>
-              <strong id="healthStatus">-</strong>
-            </div>
+          <div class="status-card">
+            <span>Queue Size</span>
+            <strong id="queueSize">-</strong>
+          </div>
 
-            <div class="status-card">
-              <span>Queue Size</span>
-              <strong id="queueSize">-</strong>
-            </div>
-
-            <div class="status-card">
-              <span>Mode</span>
-              <strong>Queue Based</strong>
-            </div>
-          </aside>
-        </div>
+          <div class="status-card">
+            <span>Mode</span>
+            <strong>Queue Based</strong>
+          </div>
+        </aside>
       </section>
 
       <section id="create" class="section-card">
-        <div class="panel-header section-header">
-          <div>
-            <span class="eyebrow">CREATE</span>
-            <h2>이벤트 생성</h2>
-            <p>사용자 페이지에 표시될 선착순 이벤트 정보를 입력합니다.</p>
-          </div>
+        <div class="section-header">
+          <span class="eyebrow">CREATE</span>
+          <h2>이벤트 생성</h2>
+          <p>사용자 페이지에 표시될 선착순 이벤트 정보를 입력합니다.</p>
         </div>
 
         <form id="eventForm" class="form-card">
@@ -99,26 +97,21 @@
 
           <div class="form-actions">
             <button type="submit" class="btn primary">이벤트 생성</button>
-            <button type="button" class="btn secondary" onclick="document.getElementById('eventForm').reset();">
-              입력 초기화
-            </button>
           </div>
         </form>
 
         <div id="eventCreateResult" class="result"></div>
       </section>
 
-      <div class="admin-grid">
-        <section id="apply" class="section-card compact-card">
-          <div class="panel-header section-header">
-            <div>
-              <span class="eyebrow">APPLY TEST</span>
-              <h2>신청 테스트</h2>
-              <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
-            </div>
+      <div class="section-grid">
+        <section id="apply" class="section-card">
+          <div class="section-header">
+            <span class="eyebrow">APPLY TEST</span>
+            <h2>신청 테스트</h2>
+            <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
           </div>
 
-          <form id="applyForm" class="small-form">
+          <form id="applyForm" class="form-card small-form">
             <div class="field">
               <label for="applyEventId">이벤트 ID</label>
               <p>테스트할 이벤트 번호를 입력합니다.</p>
@@ -131,29 +124,31 @@
               <input id="applicantName" type="text" value="admin-test-user" required />
             </div>
 
-            <button type="submit" class="btn primary full">신청 테스트</button>
+            <div class="form-actions">
+              <button type="submit" class="btn primary full">신청 테스트</button>
+            </div>
           </form>
 
           <div id="applyResult" class="result"></div>
         </section>
 
-        <section id="lookup" class="section-card compact-card">
-          <div class="panel-header section-header">
-            <div>
-              <span class="eyebrow">LOOKUP</span>
-              <h2>신청 상태 조회</h2>
-              <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
-            </div>
+        <section id="lookup" class="section-card">
+          <div class="section-header">
+            <span class="eyebrow">LOOKUP</span>
+            <h2>신청 상태 조회</h2>
+            <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
           </div>
 
-          <form id="applicationLookupForm" class="small-form">
+          <form id="applicationLookupForm" class="form-card small-form">
             <div class="field">
               <label for="applicationId">신청 ID</label>
               <p>상태를 조회할 신청 번호를 입력합니다.</p>
               <input id="applicationId" type="number" placeholder="예: 1" required />
             </div>
 
-            <button type="submit" class="btn secondary full">상태 조회</button>
+            <div class="form-actions">
+              <button type="submit" class="btn secondary full">상태 조회</button>
+            </div>
           </form>
 
           <div id="applicationResult" class="result"></div>
@@ -161,7 +156,7 @@
       </div>
 
       <section id="events" class="section-card">
-        <div class="panel-header section-header section-header-row">
+        <div class="section-header row">
           <div>
             <span class="eyebrow">EVENTS</span>
             <h2>이벤트 목록</h2>
@@ -180,6 +175,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=6"></script>
+  <script src="./app.js?v=7"></script>
 </body>
 </html>
