@@ -4,60 +4,72 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Admin</title>
-  <link rel="stylesheet" href="./styles.css?v=4" />
+  <link rel="stylesheet" href="./styles.css?v=5" />
 </head>
 <body>
-  <div class="admin-page">
-    <header class="admin-header">
-      <div class="admin-header-inner">
-        <a class="brand" href="/admin/">
-          <span class="brand-mark">F</span>
-          <span>
-            <strong>FastPass</strong>
-            <small>Admin Console</small>
-          </span>
-        </a>
+  <div class="page">
+    <header class="topbar">
+      <a class="logo" href="/admin/">
+        <span class="logo-mark">F</span>
+        <span>
+          <strong>FastPass</strong>
+          <small>Admin Console</small>
+        </span>
+      </a>
 
-        <nav class="admin-nav">
-          <a href="#create" class="active">이벤트 생성</a>
-          <a href="#apply">신청 테스트</a>
-          <a href="#lookup">상태 조회</a>
-          <a href="#events">이벤트 목록</a>
-          <a href="/">사용자 페이지</a>
-        </nav>
-      </div>
+      <nav class="topnav">
+        <a href="#create">이벤트 생성</a>
+        <a href="#apply">신청 테스트</a>
+        <a href="#lookup">상태 조회</a>
+        <a href="#events">이벤트 목록</a>
+        <a href="/">사용자 페이지</a>
+      </nav>
     </header>
 
-    <main class="admin-main">
-      <section class="page-title">
-        <div>
-          <p class="eyebrow">Event Management</p>
-          <h1>이벤트 생성</h1>
-          <p class="page-description">
-            선착순 이벤트 신청에 필요한 정보를 입력합니다.
-          </p>
-        </div>
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <div>
+            <span class="eyebrow">KUBERNETES EVENT APPLICATION SYSTEM</span>
+            <h1>FastPass Admin</h1>
+            <p class="hero-text">
+              선착순 이벤트를 생성하고 Redis Queue, Worker, Kubernetes 기반 처리 상태를 확인하는 관리자 페이지입니다.
+            </p>
 
-        <div class="status-summary">
-          <div>
-            <span>API Health</span>
-            <strong id="healthStatus">-</strong>
+            <div class="hero-actions">
+              <a href="#create" class="btn primary">이벤트 생성하기</a>
+              <button id="refreshStatusBtn" type="button" class="btn secondary">운영 상태 확인</button>
+            </div>
           </div>
-          <div>
-            <span>Queue Size</span>
-            <strong id="queueSize">-</strong>
-          </div>
+
+          <aside class="status-panel">
+            <div class="status-card">
+              <span>API Health</span>
+              <strong id="healthStatus">-</strong>
+            </div>
+
+            <div class="status-card">
+              <span>Queue Size</span>
+              <strong id="queueSize">-</strong>
+            </div>
+
+            <div class="status-card">
+              <span>Mode</span>
+              <strong>Queue Based</strong>
+            </div>
+          </aside>
         </div>
       </section>
 
-      <section id="create" class="form-section">
-        <div class="section-copy">
-          <h2>기본 정보</h2>
-          <p>
-            사용자 페이지에 표시될 이벤트 제목, 설명, 정원, 시작 시간을 설정합니다.
-          </p>
+      <section id="create" class="section-heading">
+        <div>
+          <span class="eyebrow">CREATE</span>
+          <h2>이벤트 생성</h2>
+          <p>사용자 페이지에 표시될 선착순 이벤트 정보를 입력합니다.</p>
         </div>
+      </section>
 
+      <section class="form-section">
         <form id="eventForm" class="form-card">
           <div class="field">
             <label for="eventTitle">이벤트 제목</label>
@@ -87,8 +99,8 @@
 
           <div class="form-actions">
             <button type="submit" class="btn primary">이벤트 생성</button>
-            <button id="refreshStatusBtn" type="button" class="btn secondary">
-              운영 상태 확인
+            <button type="button" class="btn secondary" onclick="document.getElementById('eventForm').reset();">
+              입력 초기화
             </button>
           </div>
         </form>
@@ -96,12 +108,14 @@
         <div id="eventCreateResult" class="result"></div>
       </section>
 
-      <section class="secondary-grid">
+      <section class="admin-grid">
         <section id="apply" class="panel">
           <div class="panel-header">
-            <p class="eyebrow">Apply Test</p>
-            <h2>신청 테스트</h2>
-            <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
+            <div>
+              <span class="eyebrow">APPLY TEST</span>
+              <h2>신청 테스트</h2>
+              <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
+            </div>
           </div>
 
           <form id="applyForm" class="small-form">
@@ -123,9 +137,11 @@
 
         <section id="lookup" class="panel">
           <div class="panel-header">
-            <p class="eyebrow">Lookup</p>
-            <h2>신청 상태 조회</h2>
-            <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
+            <div>
+              <span class="eyebrow">LOOKUP</span>
+              <h2>신청 상태 조회</h2>
+              <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
+            </div>
           </div>
 
           <form id="applicationLookupForm" class="small-form">
@@ -141,24 +157,24 @@
         </section>
       </section>
 
-      <section id="events" class="panel event-panel">
-        <div class="panel-title-row">
-          <div>
-            <p class="eyebrow">Events</p>
-            <h2>이벤트 목록</h2>
-            <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
-          </div>
-
-          <button id="eventListRefreshBtn" type="button" class="btn secondary">
-            새로고침
-          </button>
+      <section id="events" class="section-heading events-heading">
+        <div>
+          <span class="eyebrow">EVENTS</span>
+          <h2>이벤트 목록</h2>
+          <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
         </div>
 
-        <div id="eventList" class="event-list"></div>
+        <button id="eventListRefreshBtn" type="button" class="btn secondary small">
+          목록 새로고침
+        </button>
+      </section>
+
+      <section id="eventList" class="event-list">
+        <div class="empty">이벤트를 불러오는 중입니다...</div>
       </section>
     </main>
   </div>
 
-  <script src="./app.js?v=4"></script>
+  <script src="./app.js?v=5"></script>
 </body>
 </html>
