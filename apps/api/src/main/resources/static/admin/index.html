@@ -4,93 +4,99 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Admin</title>
-  <link rel="stylesheet" href="./styles.css?v=1" />
+  <link rel="stylesheet" href="./styles.css?v=2" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">F</div>
-        <div class="brand-copy">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/admin/">
+        <span class="brand-mark">F</span>
+        <span>
           <strong>FastPass</strong>
-          <span>Admin Console</span>
-        </div>
-      </div>
+          <small>Admin Console</small>
+        </span>
+      </a>
 
-      <nav class="topnav">
-        <a href="/">User Page</a>
-        <a href="#create">Create</a>
-        <a href="#apply">Apply</a>
-        <a href="#events">Events</a>
+      <nav class="side-nav">
+        <a href="#create" class="active">이벤트 생성</a>
+        <a href="#apply">신청 테스트</a>
+        <a href="#lookup">상태 조회</a>
+        <a href="#events">이벤트 목록</a>
+        <a href="/">사용자 페이지</a>
       </nav>
-    </header>
+    </aside>
 
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Kubernetes Event Application System</p>
-        <h1>FastPass Admin</h1>
-        <p class="hero-text">
-          선착순 이벤트 신청을 Redis Queue와 Worker로 처리하고,
-          Kubernetes 환경에서 이벤트 운영 상태를 확인하는 관리자 페이지입니다.
-        </p>
-
-        <div class="hero-actions">
-          <a href="#create" class="btn primary">이벤트 생성</a>
-          <button id="refreshStatusBtn" type="button" class="btn secondary">운영 상태 확인</button>
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Kubernetes Event Application System</p>
+          <h1>이벤트 운영 관리</h1>
+          <p class="page-description">
+            선착순 이벤트 신청을 생성하고, Redis Queue 기반 처리 상태를 확인합니다.
+          </p>
         </div>
-      </div>
 
-      <aside class="hero-status">
-        <div class="status-card">
-          <p class="card-label">System Status</p>
-
-          <div class="status-row">
+        <div class="status-summary">
+          <div>
             <span>API Health</span>
             <strong id="healthStatus">-</strong>
           </div>
-
-          <div class="status-row">
+          <div>
             <span>Queue Size</span>
             <strong id="queueSize">-</strong>
           </div>
-
-          <div class="status-row">
-            <span>Mode</span>
-            <strong>Queue Based</strong>
-          </div>
         </div>
-      </aside>
-    </section>
+      </header>
 
-    <main class="dashboard-grid">
-      <section id="create" class="panel">
+      <section id="create" class="panel create-panel">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Create</p>
+            <p class="section-kicker">Create Event</p>
             <h2>이벤트 생성</h2>
+            <p>
+              사용자가 신청할 수 있는 선착순 이벤트 정보를 입력합니다.
+            </p>
           </div>
+
+          <button id="refreshStatusBtn" type="button" class="btn secondary">
+            운영 상태 확인
+          </button>
         </div>
 
-        <form id="eventForm" class="form-grid">
-          <label>
-            이벤트 제목
+        <form id="eventForm" class="form-card">
+          <div class="field-group">
+            <label for="eventTitle">
+              이벤트 제목
+              <span>사용자 페이지의 티켓팅 카드에 표시됩니다.</span>
+            </label>
             <input id="eventTitle" type="text" value="FastPass Open Event" required />
-          </label>
+          </div>
 
-          <label>
-            설명
+          <div class="field-group">
+            <label for="eventDescription">
+              설명
+              <span>이벤트 목적이나 안내 문구를 입력합니다.</span>
+            </label>
             <input id="eventDescription" type="text" value="선착순 이벤트 신청 테스트" required />
-          </label>
+          </div>
 
-          <label>
-            정원
-            <input id="eventCapacity" type="number" value="3" min="1" required />
-          </label>
+          <div class="form-row">
+            <div class="field-group">
+              <label for="eventCapacity">
+                정원
+                <span>신청 성공 처리 가능한 최대 인원입니다.</span>
+              </label>
+              <input id="eventCapacity" type="number" value="3" min="1" required />
+            </div>
 
-          <label>
-            시작 시간
-            <input id="eventStartAt" type="datetime-local" required />
-          </label>
+            <div class="field-group">
+              <label for="eventStartAt">
+                시작 시간
+                <span>이벤트 오픈 시간을 입력합니다.</span>
+              </label>
+              <input id="eventStartAt" type="datetime-local" required />
+            </div>
+          </div>
 
           <button type="submit" class="btn primary full">이벤트 생성</button>
         </form>
@@ -98,59 +104,66 @@
         <div id="eventCreateResult" class="result"></div>
       </section>
 
-      <section id="apply" class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">Apply</p>
-            <h2>이벤트 신청 테스트</h2>
+      <section class="content-grid">
+        <section id="apply" class="panel">
+          <div class="panel-header compact">
+            <div>
+              <p class="section-kicker">Apply Test</p>
+              <h2>신청 테스트</h2>
+              <p>관리자 페이지에서 특정 이벤트에 신청을 테스트합니다.</p>
+            </div>
           </div>
-        </div>
 
-        <form id="applyForm" class="form-grid">
-          <label>
-            이벤트 ID
-            <input id="applyEventId" type="number" placeholder="예: 1" required />
-          </label>
+          <form id="applyForm" class="form-card">
+            <div class="field-group">
+              <label for="applyEventId">이벤트 ID</label>
+              <input id="applyEventId" type="number" placeholder="예: 1" required />
+            </div>
 
-          <label>
-            신청자 이름
-            <input id="applicantName" type="text" value="admin-test-user" required />
-          </label>
+            <div class="field-group">
+              <label for="applicantName">신청자 이름</label>
+              <input id="applicantName" type="text" value="admin-test-user" required />
+            </div>
 
-          <button type="submit" class="btn primary full">신청 테스트</button>
-        </form>
+            <button type="submit" class="btn primary full">신청 테스트</button>
+          </form>
 
-        <div id="applyResult" class="result"></div>
+          <div id="applyResult" class="result"></div>
+        </section>
+
+        <section id="lookup" class="panel">
+          <div class="panel-header compact">
+            <div>
+              <p class="section-kicker">Lookup</p>
+              <h2>신청 상태 조회</h2>
+              <p>applicationId 기준으로 처리 상태를 확인합니다.</p>
+            </div>
+          </div>
+
+          <form id="applicationLookupForm" class="form-card">
+            <div class="field-group">
+              <label for="applicationId">신청 ID</label>
+              <input id="applicationId" type="number" placeholder="예: 1" required />
+            </div>
+
+            <button type="submit" class="btn secondary full">상태 조회</button>
+          </form>
+
+          <div id="applicationResult" class="result"></div>
+        </section>
       </section>
 
-      <section class="panel">
+      <section id="events" class="panel">
         <div class="panel-header">
           <div>
-            <p class="eyebrow">Lookup</p>
-            <h2>신청 상태 조회</h2>
-          </div>
-        </div>
-
-        <form id="applicationLookupForm" class="form-grid">
-          <label>
-            신청 ID
-            <input id="applicationId" type="number" placeholder="예: 1" required />
-          </label>
-
-          <button type="submit" class="btn secondary full">상태 조회</button>
-        </form>
-
-        <div id="applicationResult" class="result"></div>
-      </section>
-
-      <section id="events" class="panel panel-wide">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">Events</p>
+            <p class="section-kicker">Events</p>
             <h2>이벤트 목록</h2>
+            <p>현재 생성된 이벤트와 신청 현황을 확인합니다.</p>
           </div>
 
-          <button id="eventListRefreshBtn" type="button" class="btn ghost small">새로고침</button>
+          <button id="eventListRefreshBtn" type="button" class="btn secondary">
+            새로고침
+          </button>
         </div>
 
         <div id="eventList" class="event-list"></div>
@@ -158,6 +171,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=1"></script>
+  <script src="./app.js?v=2"></script>
 </body>
 </html>
