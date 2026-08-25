@@ -5,11 +5,11 @@
 :root {
   --bg: #080b14;
   --card: rgba(255, 255, 255, 0.045);
-  --card-strong: rgba(255, 255, 255, 0.065);
+  --card-hover: rgba(255, 255, 255, 0.065);
   --border: rgba(255, 255, 255, 0.11);
-  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-strong: rgba(255, 255, 255, 0.17);
   --text: #f8fafc;
-  --muted: #909bae;
+  --muted: #8f9bb0;
   --muted-2: #c3ccda;
   --blue: #5b8cff;
   --purple: #7c5cff;
@@ -54,7 +54,7 @@ button {
 }
 
 .page {
-  width: min(1120px, calc(100% - 48px));
+  width: min(1080px, calc(100% - 48px));
   margin: 0 auto;
   padding: 24px 0 72px;
 }
@@ -128,31 +128,31 @@ button {
 
 .main-stack {
   display: grid;
-  gap: 22px;
+  gap: 24px;
 }
 
-/* top hero panel */
+/* Hero panel */
 .hero-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 250px;
   gap: 28px;
   align-items: center;
-  min-height: 280px;
+  min-height: 260px;
   padding: 34px 36px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--card);
 }
 
-.hero-main h1 {
+.hero-content h1 {
   margin: 0;
-  font-size: clamp(32px, 5vw, 58px);
+  font-size: clamp(34px, 5vw, 58px);
   line-height: 1.04;
   letter-spacing: -0.05em;
 }
 
-.hero-main p {
-  max-width: 720px;
+.hero-content p {
+  max-width: 740px;
   margin: 14px 0 0;
   color: var(--muted-2);
   font-size: 15px;
@@ -174,7 +174,7 @@ button {
   padding: 15px 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(3, 7, 18, 0.32);
+  background: rgba(3, 7, 18, 0.34);
 }
 
 .status-card span {
@@ -193,9 +193,10 @@ button {
   font-weight: 900;
 }
 
-/* section panels */
+/* Real section panels */
 .section-card {
-  padding: 26px;
+  display: block;
+  padding: 28px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--card);
@@ -205,17 +206,11 @@ button {
   border-color: var(--border-strong);
 }
 
-.section-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
-}
-
 .section-header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
-.section-header.row {
+.section-header-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -235,9 +230,9 @@ button {
 
 .section-header h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1.2;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
 }
 
 .section-header p {
@@ -247,15 +242,16 @@ button {
   line-height: 1.6;
 }
 
-/* forms */
+/* Forms */
 .form-card {
   display: grid;
   gap: 18px;
-  max-width: 760px;
+  width: 100%;
+  max-width: 720px;
 }
 
-.small-form {
-  max-width: none;
+.compact-form {
+  max-width: 520px;
 }
 
 .field {
@@ -313,7 +309,7 @@ input:focus {
   border-top: 1px solid var(--border);
 }
 
-/* buttons */
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -354,7 +350,7 @@ input:focus {
   width: 100%;
 }
 
-/* result */
+/* Result box */
 .result {
   margin-top: 16px;
   padding: 14px;
@@ -393,7 +389,7 @@ input:focus {
   font-size: 13px;
 }
 
-/* event list */
+/* Event list */
 .event-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -409,7 +405,7 @@ input:focus {
 }
 
 .event-card:hover {
-  background: var(--card-strong);
+  background: var(--card-hover);
   border-color: var(--border-strong);
 }
 
@@ -491,10 +487,10 @@ input:focus {
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* responsive */
+/* Responsive */
 @media (max-width: 1024px) {
   .page {
-    width: min(100% - 32px, 1120px);
+    width: min(100% - 32px, 1080px);
   }
 
   .topbar {
@@ -516,7 +512,6 @@ input:focus {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .section-grid,
   .event-list {
     grid-template-columns: 1fr;
   }
@@ -524,7 +519,7 @@ input:focus {
 
 @media (max-width: 720px) {
   .page {
-    width: min(100% - 20px, 1120px);
+    width: min(100% - 20px, 1080px);
     padding-top: 16px;
   }
 
@@ -533,13 +528,13 @@ input:focus {
     padding: 20px;
   }
 
-  .hero-main h1 {
+  .hero-content h1 {
     font-size: 36px;
   }
 
   .hero-actions,
   .form-actions,
-  .section-header.row {
+  .section-header-row {
     flex-direction: column;
     align-items: stretch;
   }

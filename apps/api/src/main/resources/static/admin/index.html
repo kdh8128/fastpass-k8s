@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FastPass Admin</title>
-  <link rel="stylesheet" href="./styles.css?v=7" />
+  <link rel="stylesheet" href="./styles.css?v=8" />
 </head>
 <body>
   <div class="page">
@@ -28,7 +28,7 @@
 
     <main class="main-stack">
       <section class="hero-card">
-        <div class="hero-main">
+        <div class="hero-content">
           <span class="eyebrow">KUBERNETES EVENT APPLICATION SYSTEM</span>
           <h1>FastPass Admin</h1>
           <p>
@@ -103,60 +103,58 @@
         <div id="eventCreateResult" class="result"></div>
       </section>
 
-      <div class="section-grid">
-        <section id="apply" class="section-card">
-          <div class="section-header">
-            <span class="eyebrow">APPLY TEST</span>
-            <h2>신청 테스트</h2>
-            <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
+      <section id="apply" class="section-card">
+        <div class="section-header">
+          <span class="eyebrow">APPLY TEST</span>
+          <h2>신청 테스트</h2>
+          <p>생성된 이벤트 ID로 신청 API를 테스트합니다.</p>
+        </div>
+
+        <form id="applyForm" class="form-card">
+          <div class="field">
+            <label for="applyEventId">이벤트 ID</label>
+            <p>테스트할 이벤트 번호를 입력합니다.</p>
+            <input id="applyEventId" type="number" placeholder="예: 1" required />
           </div>
 
-          <form id="applyForm" class="form-card small-form">
-            <div class="field">
-              <label for="applyEventId">이벤트 ID</label>
-              <p>테스트할 이벤트 번호를 입력합니다.</p>
-              <input id="applyEventId" type="number" placeholder="예: 1" required />
-            </div>
-
-            <div class="field">
-              <label for="applicantName">신청자 이름</label>
-              <p>테스트 요청에 사용할 신청자 이름입니다.</p>
-              <input id="applicantName" type="text" value="admin-test-user" required />
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn primary full">신청 테스트</button>
-            </div>
-          </form>
-
-          <div id="applyResult" class="result"></div>
-        </section>
-
-        <section id="lookup" class="section-card">
-          <div class="section-header">
-            <span class="eyebrow">LOOKUP</span>
-            <h2>신청 상태 조회</h2>
-            <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
+          <div class="field">
+            <label for="applicantName">신청자 이름</label>
+            <p>테스트 요청에 사용할 신청자 이름입니다.</p>
+            <input id="applicantName" type="text" value="admin-test-user" required />
           </div>
 
-          <form id="applicationLookupForm" class="form-card small-form">
-            <div class="field">
-              <label for="applicationId">신청 ID</label>
-              <p>상태를 조회할 신청 번호를 입력합니다.</p>
-              <input id="applicationId" type="number" placeholder="예: 1" required />
-            </div>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">신청 테스트</button>
+          </div>
+        </form>
 
-            <div class="form-actions">
-              <button type="submit" class="btn secondary full">상태 조회</button>
-            </div>
-          </form>
+        <div id="applyResult" class="result"></div>
+      </section>
 
-          <div id="applicationResult" class="result"></div>
-        </section>
-      </div>
+      <section id="lookup" class="section-card">
+        <div class="section-header">
+          <span class="eyebrow">LOOKUP</span>
+          <h2>신청 상태 조회</h2>
+          <p>신청 ID를 기준으로 처리 상태를 확인합니다.</p>
+        </div>
+
+        <form id="applicationLookupForm" class="form-card compact-form">
+          <div class="field">
+            <label for="applicationId">신청 ID</label>
+            <p>상태를 조회할 신청 번호를 입력합니다.</p>
+            <input id="applicationId" type="number" placeholder="예: 1" required />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn secondary">상태 조회</button>
+          </div>
+        </form>
+
+        <div id="applicationResult" class="result"></div>
+      </section>
 
       <section id="events" class="section-card">
-        <div class="section-header row">
+        <div class="section-header section-header-row">
           <div>
             <span class="eyebrow">EVENTS</span>
             <h2>이벤트 목록</h2>
@@ -175,6 +173,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=7"></script>
+  <script src="./app.js?v=8"></script>
 </body>
 </html>
