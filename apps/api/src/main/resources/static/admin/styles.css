@@ -3,15 +3,20 @@
 }
 
 :root {
-  --bg-start: #050816;
-  --bg-end: #0d1230;
-  --card: rgba(255, 255, 255, 0.05);
-  --card-strong: rgba(255, 255, 255, 0.07);
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --bg: #070b16;
+  --bg-2: #0b1020;
+
+  --card: rgba(255, 255, 255, 0.055);
+  --card-soft: rgba(255, 255, 255, 0.035);
+  --card-hover: rgba(255, 255, 255, 0.075);
+
+  --border: rgba(255, 255, 255, 0.11);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
   --text: #f8fafc;
-  --muted: #aab4c5;
-  --muted-2: #cfd7e6;
+  --muted: #9aa7bd;
+  --muted-2: #c6d0e1;
+
   --blue: #5b7cff;
   --purple: #7b5cff;
   --green: #34d399;
@@ -25,8 +30,8 @@ html {
 
 body {
   margin: 0;
-  color: var(--text);
   min-height: 100vh;
+  color: var(--text);
   font-family:
     Inter,
     Pretendard,
@@ -35,8 +40,8 @@ body {
     "Segoe UI",
     sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(91, 124, 255, 0.12), transparent 24%),
-    linear-gradient(135deg, var(--bg-start) 0%, #081127 48%, var(--bg-end) 100%);
+    radial-gradient(circle at top left, rgba(91, 124, 255, 0.12), transparent 28%),
+    linear-gradient(135deg, var(--bg) 0%, #081127 48%, var(--bg-2) 100%);
 }
 
 a {
@@ -50,56 +55,73 @@ input {
 }
 
 button {
-  border: none;
+  border: 0;
   cursor: pointer;
 }
 
-.page {
+/* 전체 폭 */
+.page,
+.app-shell,
+.admin-page,
+.admin-shell {
   width: min(1120px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 18px 0 64px;
+  padding: 22px 0 72px;
 }
 
-.topbar {
+/* 상단 */
+.topbar,
+.nav,
+.admin-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  gap: 24px;
+  min-height: 64px;
+  margin-bottom: 24px;
 }
 
-.logo {
+.logo,
+.brand {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.logo-mark {
+.logo-mark,
+.brand-mark {
   width: 42px;
   height: 42px;
   display: grid;
   place-items: center;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--blue), var(--purple));
-  color: white;
+  color: #fff;
   font-size: 20px;
   font-weight: 900;
 }
 
-.logo-text strong {
+.logo strong,
+.brand strong {
   display: block;
   font-size: 17px;
   font-weight: 900;
   line-height: 1.1;
 }
 
-.logo-text small {
+.logo small,
+.brand small,
+.logo span small,
+.brand span small {
   display: block;
   margin-top: 3px;
   color: var(--muted);
   font-size: 12px;
 }
 
-.topnav {
+.topnav,
+.nav-actions,
+.admin-nav {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -109,7 +131,9 @@ button {
   background: rgba(255, 255, 255, 0.035);
 }
 
-.topnav a {
+.topnav a,
+.nav-actions a,
+.admin-nav a {
   display: inline-flex;
   align-items: center;
   min-height: 38px;
@@ -121,41 +145,74 @@ button {
   white-space: nowrap;
 }
 
-.topnav a:hover {
+.topnav a:hover,
+.nav-actions a:hover,
+.admin-nav a:hover,
+.admin-nav a.active {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-.content-stack {
+/* main spacing */
+main,
+.admin-layout,
+.content-stack,
+.main-stack,
+.dashboard-grid {
   display: grid;
   gap: 22px;
 }
 
+/* ================================
+   핵심: 각 영역을 둥근 패널로 강제
+   ================================ */
+
+/* Hero 패널 */
+.hero,
 .hero-card,
-.section-card {
+.hero-copy,
+.hero-content {
   border: 1px solid var(--border);
   border-radius: 22px;
   background: var(--card);
-  backdrop-filter: blur(6px);
 }
 
+.hero,
 .hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 24px;
   padding: 32px;
 }
 
-.hero-main h1 {
-  margin: 0;
-  font-size: 48px;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+.hero-copy,
+.hero-content {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
-.hero-main p {
+.hero-card,
+.hero-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+  align-items: center;
+}
+
+.hero h1,
+.hero-card h1,
+.hero-copy h1,
+.hero-content h1 {
+  margin: 0;
+  font-size: clamp(38px, 5vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.hero p,
+.hero-text,
+.hero-main p,
+.hero-content p {
+  max-width: 760px;
   margin: 14px 0 0;
-  max-width: 720px;
   color: var(--muted-2);
   font-size: 15px;
   line-height: 1.7;
@@ -167,49 +224,98 @@ button {
   margin-top: 22px;
 }
 
-.hero-status {
+/* 상태 영역 */
+.status-panel,
+.hero-status,
+.status-summary,
+.status-card {
   display: grid;
   gap: 10px;
-  align-content: start;
 }
 
-.status-box {
-  padding: 15px 16px;
+.status-card,
+.status-box,
+.status-row,
+.status-summary div {
+  padding: 14px 15px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(3, 7, 18, 0.34);
 }
 
-.status-box span {
+.status-card span,
+.status-box span,
+.status-row span,
+.status-summary span {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
 }
 
-.status-box strong {
+.status-card strong,
+.status-box strong,
+.status-row strong,
+.status-summary strong {
   display: block;
-  font-size: 22px;
+  color: #fff;
+  font-size: 20px;
   font-weight: 900;
+  line-height: 1.2;
 }
 
-.section-card {
+/* 이벤트 생성 / 신청 테스트 / 조회 / 목록 패널 */
+.section-card,
+.form-section,
+.panel,
+.create-panel,
+.event-panel,
+#apply,
+#lookup,
+#events {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
   padding: 28px;
 }
 
-.section-header {
-  margin-bottom: 20px;
+/* 현재 화면처럼 CREATE 제목과 form이 따로 있는 구조까지 잡기 */
+.section-heading,
+#create {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+  padding: 28px;
 }
 
-.section-header-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
+/* 만약 #create 다음에 form-section이 바로 오면 한 덩어리처럼 보이게 */
+#create + .form-section,
+.section-heading + .form-section {
+  margin-top: -22px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top-color: transparent;
 }
 
-.eyebrow {
+#create,
+.section-heading {
+  margin-bottom: 0;
+}
+
+/* APPLY/LOOKUP이 grid 안에 있든, section이든 무조건 카드 */
+.admin-grid,
+.secondary-grid,
+.content-grid,
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+/* section header */
+.eyebrow,
+.section-kicker {
   display: inline-flex;
   margin: 0 0 10px;
   color: #9fb0d7;
@@ -219,44 +325,96 @@ button {
   text-transform: uppercase;
 }
 
-.section-header h2 {
+.section-header,
+.panel-header,
+.section-title,
+.panel-title-row {
+  margin-bottom: 20px;
+}
+
+.section-header-row,
+.panel-title-row,
+.section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-header h2,
+.panel-header h2,
+.section-title h2,
+.panel-title-row h2,
+#create h2,
+#apply h2,
+#lookup h2,
+#events h2 {
   margin: 0;
   font-size: 30px;
   line-height: 1.2;
   letter-spacing: -0.04em;
 }
 
-.section-header p {
+.section-header p,
+.panel-header p,
+.section-title p,
+.panel-title-row p,
+#create p,
+#apply p,
+#lookup p,
+#events p {
   margin: 8px 0 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
 }
 
-.form-layout {
+/* form */
+.form-card,
+.form-layout,
+.form-grid,
+.small-form,
+#eventForm,
+#applyForm,
+#applicationLookupForm {
   display: grid;
   gap: 18px;
   max-width: 760px;
 }
 
-.field {
+#applicationLookupForm,
+.lookup-form {
+  max-width: 620px;
+}
+
+.field,
+.field-group,
+.form-grid label,
+.small-form label,
+#eventForm label,
+#applyForm label,
+#applicationLookupForm label {
   display: grid;
   gap: 7px;
-}
-
-.field label {
+  color: #f3f6ff;
   font-size: 14px;
   font-weight: 900;
-  color: #f3f6ff;
 }
 
-.field p {
+.field p,
+.field-group span,
+.field-group p,
+#eventForm label span,
+#applyForm label span,
+#applicationLookupForm label span {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+  font-weight: 600;
 }
 
+.form-row,
 .two-column {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -292,29 +450,17 @@ input:focus {
   border-top: 1px solid var(--border);
 }
 
-.lookup-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 130px;
-  gap: 12px;
-  align-items: end;
-  max-width: 760px;
-}
-
-.lookup-field {
-  margin: 0;
-}
-
-.lookup-action {
-  display: flex;
-}
-
-.btn {
+/* button */
+.btn,
+button,
+input[type="submit"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 42px;
   padding: 0 16px;
   border-radius: 11px;
+  color: #fff;
   font-size: 13px;
   font-weight: 900;
   transition:
@@ -324,17 +470,18 @@ input:focus {
     border-color 0.16s ease;
 }
 
-.btn:hover {
+.btn:hover,
+button:hover {
   transform: translateY(-1px);
 }
 
-.btn.primary {
-  color: #fff;
+.btn.primary,
+button[type="submit"] {
   background: linear-gradient(135deg, var(--blue), var(--purple));
 }
 
-.btn.secondary {
-  color: #fff;
+.btn.secondary,
+button[type="button"] {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -343,6 +490,7 @@ input:focus {
   width: 100%;
 }
 
+/* result */
 .result {
   margin-top: 16px;
   padding: 14px;
@@ -381,6 +529,7 @@ input:focus {
   font-size: 13px;
 }
 
+/* event list */
 .event-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -397,7 +546,7 @@ input:focus {
 
 .event-card:hover {
   border-color: var(--border-strong);
-  background: var(--card-strong);
+  background: var(--card-hover);
 }
 
 .event-card h3 {
@@ -480,67 +629,99 @@ input:focus {
 
 /* responsive */
 @media (max-width: 1024px) {
-  .page {
+  .page,
+  .app-shell,
+  .admin-page,
+  .admin-shell {
     width: min(100% - 32px, 1120px);
   }
 
-  .topbar {
+  .topbar,
+  .nav,
+  .admin-header-inner {
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;
   }
 
-  .topnav {
+  .topnav,
+  .nav-actions,
+  .admin-nav {
     width: 100%;
     overflow-x: auto;
   }
 
-  .hero-card {
+  .hero-card,
+  .hero-copy {
     grid-template-columns: 1fr;
   }
 
-  .hero-status {
+  .status-panel,
+  .hero-status,
+  .status-summary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .admin-grid,
+  .secondary-grid,
+  .content-grid,
+  .section-grid,
   .event-list {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 720px) {
-  .page {
+  .page,
+  .app-shell,
+  .admin-page,
+  .admin-shell {
     width: min(100% - 20px, 1120px);
     padding-top: 14px;
   }
 
+  .hero,
   .hero-card,
-  .section-card {
+  .section-card,
+  .form-section,
+  .panel,
+  #create,
+  #apply,
+  #lookup,
+  #events {
     padding: 20px;
   }
 
-  .hero-main h1 {
+  .hero h1,
+  .hero-card h1,
+  .hero-copy h1,
+  .hero-content h1 {
     font-size: 36px;
   }
 
   .hero-actions,
   .form-actions,
-  .section-header-row {
+  .section-header-row,
+  .panel-title-row,
+  .section-title {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .hero-status {
+  .btn,
+  button {
+    width: 100%;
+  }
+
+  .status-panel,
+  .hero-status,
+  .status-summary {
     grid-template-columns: 1fr;
   }
 
+  .form-row,
   .two-column,
   .lookup-form {
     grid-template-columns: 1fr;
-  }
-
-  .btn,
-  .lookup-action .btn {
-    width: 100%;
   }
 }
