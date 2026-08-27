@@ -198,21 +198,13 @@ GHCR 기반 container image 배포
 
 ---
 
-## 9. 한 줄 요약
+## 9. 간단 요약
 
 FastPass는 선착순 이벤트 신청 서비스를 예제로, Redis Queue 기반 비동기 처리와 Kubernetes 운영 환경에서의 배포, 확장, 모니터링, 알림, GitOps, CI/CD 흐름을 검증한 DevOps/Cloud 포트폴리오 프로젝트입니다.
 
----
-
-## 10. 이력서용 문장
-
-```text
 선착순 이벤트 신청 서비스를 예제로 Spring Boot API와 Redis Queue Worker를 구현하고, Kubernetes에서 API/Worker를 분리 배포하여 HPA 자동 확장, Prometheus/Grafana 모니터링, Alertmanager 알림, Helm, ArgoCD GitOps, GitHub Actions CI/CD, GHCR image 배포까지 구성한 DevOps/Cloud 프로젝트를 수행했습니다.
-```
 
----
-
-## 11. 향후 개선 방향
+## 10. 향후 개선 방향
 
 ```text
 Queue length 기반 Worker autoscaling
