@@ -1,80 +1,70 @@
-# FastPass
+# FastPass-k8s
 
-FastPass는 선착순 이벤트 신청 상황을 가정한 Kubernetes 기반 서비스 운영 자동화 프로젝트입니다.
+FastPass-k8s는 **선착순 이벤트 신청 상황**을 가정해 API, Redis Queue, Worker, Kubernetes 배포, 모니터링, 부하 테스트, CI/CD, GitOps 흐름을 검증한 DevOps/Kubernetes 포트폴리오 프로젝트입니다.
 
-짧은 시간에 트래픽이 집중되는 상황에서 API 서버, Redis Queue, Worker, Kubernetes 배포, 부하 테스트, 오토스케일링, 모니터링, 알림, GitOps, CI/CD 흐름을 단계적으로 검증하는 것을 목표로 합니다.
+단순한 백엔드 API 구현보다, **트래픽 집중 상황에서의 Queue 처리, Pod 확장, 배포 자동화, 운영 지표 관측, 장애 알림**을 Kubernetes 환경에서 재현하고 검증하는 데 초점을 두었습니다.
 
 ---
 
-## Project Goal
+## 1. Project Goal
 
-FastPass의 목표는 단순한 API 구현이 아니라, 운영 환경에서 발생할 수 있는 트래픽 증가, Queue 적체, Worker 확장, 장애 탐지, 배포 자동화 시나리오를 Kubernetes 기반으로 검증하는 것입니다.
-
-주요 목표는 다음과 같습니다.
-
-- Redis Queue 기반 비동기 신청 처리
+- Redis Queue 기반 비동기 신청 처리 구조 구현
 - API 서버와 Worker 역할 분리
-- Kubernetes 기반 배포
-- k6 기반 부하 테스트
-- HPA 기반 자동 확장 검증
-- Prometheus/Grafana 기반 모니터링
-- Alertmanager 기반 장애 알림
+- Kubernetes 기반 배포 구조 구성
+- HPA 기반 API/Worker 수평 확장 검증
+- Prometheus/Grafana 기반 운영 지표 수집
+- PrometheusRule/Alertmanager 기반 알림 조건 정의
 - Helm Chart 기반 배포 표준화
-- ArgoCD 기반 GitOps 배포
-- GitHub Actions 기반 CI 구성
-- GHCR 기반 container image 배포
+- Argo CD 기반 GitOps 배포 구성
+- GitHub Actions, GHCR 기반 CI/CD 자동화 구성
+- k6 기반 부하 테스트 및 운영 검증
 
 ---
 
-## Core Scenario
+## 2. Core Scenario
 
 1. 사용자가 이벤트에 신청한다.
 2. API 서버는 신청 요청을 `PENDING` 상태로 저장한다.
-3. 신청 ID는 Redis Queue에 적재된다.
-4. Worker가 Queue를 소비하며 신청을 처리한다.
-5. 정원이 남아 있으면 `SUCCESS`, 초과되면 `FAILED`로 상태를 변경한다.
-6. 트래픽이 증가하면 Kubernetes HPA가 API/Worker Pod를 자동 확장한다.
-7. Prometheus와 Grafana를 통해 API, Worker, Queue, JVM, DB metric을 관측한다.
-8. Queue backlog 또는 Worker 처리 실패가 발생하면 Alertmanager로 알림을 확인한다.
-9. GitHub Actions가 build와 container image push를 수행한다.
-10. ArgoCD가 Git에 정의된 Helm Chart를 Kubernetes에 동기화한다.
+3. 신청 ID를 Redis Queue에 적재한다.
+4. Worker가 Queue를 소비해 신청을 처리한다.
+5. 정원이 남아 있으면 `SUCCESS`, 초과되면 `FAILED`로 상태를 갱신한다.
+6. 부하가 증가하면 HPA가 API/Worker Pod를 확장한다.
+7. Prometheus와 Grafana로 API, Worker, Queue, JVM, DB 지표를 관측한다.
+8. Queue backlog 또는 Worker 처리 실패 상황은 Alertmanager 알림 조건으로 관리한다.
+9. GitHub Actions가 이미지를 빌드하고 GHCR에 Push한다.
+10. Argo CD가 Git의 Helm Chart 변경을 감지해 Kubernetes에 동기화한다.
 
 ---
 
-## Architecture
+## 3. Architecture
 
 ```mermaid
 flowchart LR
-    Client[Client / k6 Load Test] --> API[fastpass-api<br/>Spring Boot API]
-
+    Client[Client / k6 Load Test] --> API[fastpass-api\nSpring Boot API]
     API --> DB[(PostgreSQL)]
     API --> Redis[(Redis Queue)]
-
-    Redis --> Worker[fastpass-worker<br/>Queue Consumer]
+    Redis --> Worker[fastpass-worker\nQueue Consumer]
     Worker --> DB
 
-    API --> MetricsAPI[Actuator / Prometheus Metrics]
-    Worker --> MetricsWorker[Actuator / Prometheus Metrics]
-
-    MetricsAPI --> Prometheus[Prometheus]
-    MetricsWorker --> Prometheus
-
-    Prometheus --> Grafana[Grafana Dashboard]
+    API -. /actuator/prometheus .-> Prometheus[Prometheus]
+    Worker -. /actuator/prometheus .-> Prometheus
+    Prometheus --> Grafana[Grafana]
     Prometheus --> Alertmanager[Alertmanager]
 
-    GitHub[GitHub Repository] --> Actions[GitHub Actions CI]
-    Actions --> GHCR[GHCR<br/>Container Registry]
-    GitHub --> ArgoCD[ArgoCD GitOps]
+    GitHub[GitHub Repository] --> Actions[GitHub Actions]
+    Actions --> GHCR[GHCR]
+    Actions --> Helm[Helm values.yaml\nimage.tag update]
+    Helm --> GitHub
+    GitHub --> ArgoCD[Argo CD]
     ArgoCD --> K8s[Kubernetes Cluster]
     GHCR --> K8s
-
     K8s --> API
     K8s --> Worker
 ```
 
-API와 Worker는 동일한 Spring Boot image를 사용하지만, Kubernetes Deployment를 분리하여 독립적으로 확장할 수 있도록 구성했습니다.
+API와 Worker는 동일한 Spring Boot image를 사용하지만, Kubernetes Deployment를 분리해 독립적으로 확장할 수 있도록 구성했습니다.
 
-| Deployment | Role |
+| Resource | Role |
 |---|---|
 | `fastpass-api` | HTTP API 요청 처리 |
 | `fastpass-worker` | Redis Queue 소비 및 신청 처리 |
@@ -83,33 +73,34 @@ API와 Worker는 동일한 Spring Boot image를 사용하지만, Kubernetes Depl
 
 ---
 
-## DevOps Flow
-
-현재 FastPass의 전체 흐름은 다음과 같습니다.
+## 4. CI/CD & GitOps Flow
 
 ```mermaid
-flowchart TD
-    A[Developer Push] --> B[GitHub Actions]
+flowchart LR
+    PR[Pull Request] -.-> CI[Build/Test 검증]
 
-    B --> C[Gradle Build]
-    C --> D[Docker Image Build]
-    D --> E[Push Image to GHCR]
-
-    E --> F[Helm Chart]
-    F --> G[ArgoCD Sync]
-    G --> H[Kubernetes Deployment]
-
-    H --> I[HPA Autoscaling]
-    H --> J[Prometheus Metrics]
-    J --> K[Grafana Dashboard]
-    J --> L[Alertmanager Alert]
+    Push[main branch Push] --> Actions[GitHub Actions]
+    Actions --> Build[Spring Boot Build]
+    Build --> Docker[Docker Image Build]
+    Docker --> GHCR[GHCR Push\nlatest + commit SHA]
+    GHCR --> Values[Helm values.yaml\nimage.tag = commit SHA]
+    Values --> Commit[Auto Commit\n[skip ci]]
+    Commit --> Argo[Argo CD Sync]
+    Argo --> Deploy[Kubernetes Rolling Update\nfastpass-api / fastpass-worker]
 ```
 
-이를 통해 코드 변경부터 container image 생성, GitOps 배포, 운영 관측, 알림까지 이어지는 DevOps 흐름을 검증했습니다.
+### 배포 흐름
+
+- Pull Request에서는 빌드와 Docker 이미지 생성 가능 여부를 검증합니다.
+- `main` 브랜치 Push 시 GitHub Actions가 Spring Boot 빌드와 Docker 이미지 빌드를 수행합니다.
+- 이미지는 GHCR에 `latest` 및 commit SHA 태그로 Push됩니다.
+- 동일 workflow에서 `deploy/helm/fastpass/values.yaml`의 `image.tag`를 최신 commit SHA로 자동 갱신합니다.
+- GitHub Actions bot이 변경된 values.yaml을 `[skip ci]` 메시지로 Commit/Push하여 CI 반복 실행을 방지합니다.
+- Argo CD가 Helm Chart 변경을 감지하고 `fastpass-gitops` 네임스페이스에 자동 동기화합니다.
 
 ---
 
-## Tech Stack
+## 5. Tech Stack
 
 ### Application
 
@@ -122,74 +113,57 @@ flowchart TD
 - PostgreSQL
 - Redis
 
-### Container & Local Environment
+### Container / Kubernetes
 
 - Docker
 - Docker Compose
-- GHCR
-
-### Kubernetes
-
 - Kubernetes
-- Deployment
-- Service
-- ConfigMap
-- Secret
+- Deployment / Service
+- ConfigMap / Secret
 - PVC
 - HPA
+- Readiness / Liveness Probe
 - metrics-server
-- Readiness Probe
-- Liveness Probe
 
-### Load Test
-
-- k6
-
-### Observability
+### Observability / Test
 
 - Prometheus
 - Grafana
 - ServiceMonitor
 - PrometheusRule
 - Alertmanager
-- Custom Metrics
+- k6
 
-### GitOps & CI/CD
+### GitOps / CI-CD
 
 - Helm
-- ArgoCD
+- Argo CD
 - GitHub Actions
-- GitHub Container Registry
+- GHCR
 
 ---
 
-## Features
+## 6. Features
 
-- 이벤트 생성 API
-- 이벤트 목록 조회 API
-- 이벤트 단건 조회 API
-- 이벤트 신청 API
-- 신청 상태 조회 API
+- 이벤트 생성, 목록 조회, 단건 조회 API
+- 이벤트 신청 및 신청 상태 조회 API
 - 중복 신청 방지
 - 정원 초과 처리
-- Redis Queue 기반 비동기 처리
-- Worker batch processing
+- Redis Queue 기반 비동기 신청 처리
 - API/Worker Deployment 분리
-- Worker replica 증가에 따른 처리량 개선 검증
-- k6 기반 부하 테스트
-- HPA 기반 API/Worker 자동 확장 검증
+- Worker batch processing
+- HPA 기반 API/Worker 자동 확장
 - Prometheus custom metric 노출
 - Grafana dashboard 구성
-- Alertmanager 기반 알림 검증
+- PrometheusRule/Alertmanager 알림 조건 정의
 - Helm Chart 기반 배포
-- ArgoCD GitOps 배포
-- GitHub Actions CI
-- GHCR image push
+- Argo CD GitOps 배포
+- GitHub Actions 기반 CI/CD 자동화
 - GHCR image 기반 Kubernetes 배포
 
 ---
 
-## API Endpoints
+## 7. API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -199,14 +173,12 @@ flowchart TD
 | `POST` | `/api/events/{eventId}/apply` | 이벤트 신청 |
 | `GET` | `/api/applications/{applicationId}` | 신청 상태 조회 |
 | `GET` | `/api/queue/applications/size` | Redis Queue 크기 조회 |
-| `GET` | `/actuator/health` | Spring Boot health check |
+| `GET` | `/actuator/health` | Health check |
 | `GET` | `/actuator/prometheus` | Prometheus metric endpoint |
 
 ---
 
-## Custom Metrics
-
-FastPass는 운영 관측을 위해 다음 custom metric을 제공합니다.
+## 8. Custom Metrics
 
 | Metric | Type | Description |
 |---|---|---|
@@ -214,7 +186,7 @@ FastPass는 운영 관측을 위해 다음 custom metric을 제공합니다.
 | `fastpass_worker_processed_total` | Counter | Worker가 처리한 신청 수 |
 | `fastpass_worker_processing_failed_total` | Counter | Worker 처리 실패 수 |
 
-Grafana와 Prometheus에서는 다음과 같은 관점으로 관측했습니다.
+Grafana에서는 다음 지표를 중심으로 운영 상태를 확인했습니다.
 
 - API request rate
 - API response time
@@ -228,89 +200,97 @@ Grafana와 Prometheus에서는 다음과 같은 관점으로 관측했습니다.
 
 ---
 
-## Validation Summary
+## 9. Validation Summary
 
-### 1. API MVP
+### API / Queue / Worker
 
-이벤트 생성, 이벤트 조회, 이벤트 신청, 신청 상태 조회 API를 구현했습니다.
+- 이벤트 생성, 신청, 상태 조회 API를 구현했습니다.
+- API는 신청 요청을 Queue에 적재하고, Worker는 Redis Queue를 소비해 DB 상태를 갱신하도록 분리했습니다.
+- Worker batch 처리와 Worker replica 증가에 따른 Queue backlog 감소를 검증했습니다.
 
-중복 신청 방지와 정원 초과 처리를 통해 선착순 이벤트 신청 서비스의 기본 흐름을 검증했습니다.
+### Kubernetes / HPA
 
-### 2. Redis Queue Processing
+- API, Worker, PostgreSQL, Redis를 Kubernetes 리소스로 구성했습니다.
+- Readiness/Liveness Probe와 Resource request를 설정했습니다.
+- HPA를 적용해 API/Worker가 부하 상황에 따라 최대 3 replicas까지 확장되는 것을 확인했습니다.
 
-신청 요청을 Redis Queue에 적재하고, Worker가 비동기적으로 처리하는 구조를 구현했습니다.
+### Monitoring / Alerting
 
-이를 통해 API 서버는 요청 수신에 집중하고, Worker는 Queue 처리에 집중하도록 역할을 분리했습니다.
+- ServiceMonitor를 통해 API/Worker의 `/actuator/prometheus` 지표를 Prometheus에 수집했습니다.
+- Grafana에서 Queue size, Worker 처리량, Worker 실패 지표를 확인했습니다.
+- PrometheusRule로 Queue backlog와 Worker 처리 실패 상황을 알림 조건으로 정의했습니다.
 
-### 3. Worker Batch Processing
+### Load Test
 
-Worker가 Queue에서 applicationId를 하나씩 처리하던 구조를 개선하여 batch 단위로 처리하도록 변경했습니다.
+- k6로 20 VUs, 30초간 신청 API 부하를 발생시켰습니다.
+- 요청 실패율 0%, p95 응답시간 403ms를 확인했습니다.
+- 부하 상황에서 Queue가 일시적으로 증가한 뒤 Worker 처리로 감소하고, Worker 실패 누적은 0으로 유지되는 것을 확인했습니다.
 
-이를 통해 동일한 부하 조건에서 Queue backlog가 감소하는 것을 확인했습니다.
+### CI/CD / GitOps
 
-### 4. API / Worker Split
-
-API와 Worker를 별도 Kubernetes Deployment로 분리했습니다.
-
-이를 통해 HTTP 요청 처리 Pod와 Queue 처리 Pod를 독립적으로 scale-out할 수 있도록 구성했습니다.
-
-### 5. Worker Scaling
-
-Worker replica 수를 증가시켰을 때 Queue 처리 성능이 개선되는 것을 검증했습니다.
-
-Worker 1개와 2개를 비교했을 때, Worker replica 증가에 따라 Queue backlog가 더 빠르게 감소하는 것을 확인했습니다.
-
-### 6. HPA Autoscaling
-
-API와 Worker에 Kubernetes HPA를 적용하고, k6 부하 테스트를 통해 자동 확장 동작을 검증했습니다.
-
-부하 발생 시 API와 Worker가 각각 1 replica에서 최대 3 replicas까지 scale-out 되는 것을 확인했습니다.
-
-### 7. Monitoring
-
-Prometheus와 Grafana를 구성하고 FastPass API/Worker metric을 수집했습니다.
-
-Actuator metric뿐만 아니라 FastPass custom metric을 추가하여 Queue size와 Worker 처리량을 관측했습니다.
-
-### 8. Alerting
-
-PrometheusRule과 Alertmanager를 구성하여 Queue backlog와 Worker 처리 실패 상황에 대한 alert을 검증했습니다.
-
-Redis Queue에 잘못된 applicationId를 주입하여 Worker failure alert이 발생하는 것을 확인했습니다.
-
-### 9. Helm
-
-raw Kubernetes YAML을 Helm Chart로 전환했습니다.
-
-namespace, image, resource, HPA, monitoring, alerting 설정을 values.yaml로 관리할 수 있도록 구성했습니다.
-
-### 10. ArgoCD GitOps
-
-ArgoCD Application을 구성하여 GitHub repository의 Helm Chart를 Kubernetes에 동기화했습니다.
-
-ConfigMap을 수동으로 변경한 뒤 ArgoCD self-heal을 통해 Git desired state로 복구되는 것을 확인했습니다.
-
-### 11. GitHub Actions CI
-
-main branch push와 pull request 시 GitHub Actions가 자동으로 실행되도록 구성했습니다.
-
-Gradle build와 Docker image build를 자동 검증했습니다.
-
-### 12. GHCR Image Push
-
-GitHub Actions에서 Docker image를 build한 뒤 GHCR에 push하도록 구성했습니다.
-
-`latest` tag와 commit SHA tag를 함께 생성하여 image 추적성을 확보했습니다.
-
-### 13. GHCR Image Deployment
-
-Helm Chart의 image 설정을 GHCR 기준으로 변경했습니다.
-
-ArgoCD Sync를 통해 Kubernetes가 `ghcr.io/kdh8128/fastpass-k8s-api:latest` image를 사용하여 API와 Worker Pod를 실행하는 것을 확인했습니다.
+- GitHub Actions workflow를 통해 Gradle build, Docker image build, GHCR push를 자동화했습니다.
+- GHCR image는 `latest`와 commit SHA 태그를 함께 생성했습니다.
+- Helm values.yaml의 `image.tag`를 commit SHA로 자동 갱신하고, `[skip ci]`로 CI 반복 실행을 방지했습니다.
+- Argo CD가 Git 변경을 감지해 Kubernetes에 자동 재배포하는 흐름을 검증했습니다.
 
 ---
 
-## Documentation
+## 10. Quick Start
+
+### Local dependency 실행
+
+```bash
+docker compose up -d postgres redis
+```
+
+### API 로컬 실행
+
+```bash
+cd apps/api
+./gradlew.bat bootRun --args='--spring.profiles.active=local'
+```
+
+### Kubernetes 배포 확인
+
+```bash
+kubectl get pods -n fastpass-gitops
+kubectl get svc -n fastpass-gitops
+kubectl get hpa -n fastpass-gitops
+```
+
+### API 포트포워딩
+
+```bash
+kubectl port-forward -n fastpass-gitops service/fastpass-api 18083:8080
+```
+
+접속 경로는 다음과 같습니다.
+
+- User page: `http://localhost:18083/`
+- Admin page: `http://localhost:18083/admin/`
+- Health check: `http://localhost:18083/actuator/health`
+
+### Grafana 접속
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus-stack-grafana 13000:80
+```
+
+```text
+http://localhost:13000
+```
+
+### k6 부하 테스트
+
+```bash
+docker run --rm -i \
+  -e BASE_URL=http://host.docker.internal:18083 \
+  grafana/k6 run - < load-test/k6/apply-queue-test.js
+```
+
+---
+
+## 11. Documentation
 
 세부 구현 및 검증 과정은 `docs/` 디렉터리에 정리했습니다.
 
@@ -330,31 +310,32 @@ ArgoCD Sync를 통해 Kubernetes가 `ghcr.io/kdh8128/fastpass-k8s-api:latest` im
 | `docs/11-custom-metrics.md` | FastPass custom metric |
 | `docs/12-alerting.md` | PrometheusRule/Alertmanager 알림 |
 | `docs/13-helm.md` | Helm Chart 구성 |
-| `docs/14-argocd-gitops.md` | ArgoCD GitOps 배포 |
+| `docs/14-argocd-gitops.md` | Argo CD GitOps 배포 |
 | `docs/15-github-actions-ci.md` | GitHub Actions CI |
 | `docs/16-container-registry-ghcr.md` | GHCR image push |
-| `docs/17-ghcr-argocd-deployment.md` | GHCR image 기반 ArgoCD 배포 |
+| `docs/17-ghcr-argocd-deployment.md` | GHCR image 기반 Argo CD 배포 |
+| `docs/18-cicd-automation.md` | commit SHA 기반 CI/CD 자동화 |
+| `docs/19-simple-frontend.md` | 사용자/관리자 페이지 구성 |
 
 ---
 
-## Troubleshooting Highlights
-
-프로젝트 진행 중 다음 문제를 해결했습니다.
+## 12. Troubleshooting Highlights
 
 | Issue | Cause | Resolution |
 |---|---|---|
-| Kubernetes `ErrImageNeverPull` | 로컬 Kubernetes node에 image가 없음 | Docker image를 node에 import |
-| HPA metric `<unknown>` | CPU request 미설정 | Deployment resource request 추가 |
-| Spring Boot Pod 재시작 | livenessProbe가 너무 이른 시점에 동작 | readiness/liveness endpoint 분리 및 delay 조정 |
-| ArgoCD OutOfSync | HPA가 Deployment replicas 변경 | ArgoCD `ignoreDifferences`로 `/spec/replicas` 제외 |
-| Worker failure metric 증가 | Redis Queue에 DB에 없는 applicationId 존재 | 실패 metric과 alert으로 감지 |
-| GitHub Actions warning | deprecated action version 사용 | checkout/setup-java/setup-gradle action version 업데이트 |
+| `ErrImageNeverPull` | 로컬 Kubernetes node에 image가 없음 | GHCR image 기반 배포로 전환 |
+| HPA metric `<unknown>` | CPU request 또는 metrics 수집 문제 | Resource request와 metrics-server 상태 확인 |
+| Pod 재시작 | livenessProbe가 너무 이른 시점에 동작 | readiness/liveness endpoint 분리 및 delay 조정 |
+| Argo CD OutOfSync | HPA가 Deployment replicas 변경 | replicas 차이를 GitOps 관리 대상에서 분리 |
+| Worker failure metric 증가 | Queue에 DB에 없는 applicationId 존재 | 실패 metric과 alert 조건으로 감지 |
+| GitHub Actions 변경 미반영 | 실제 workflow 파일이 `ci.yaml`인데 다른 파일 수정 | 실제 사용 중인 workflow 파일 기준으로 수정 |
+| Admin static resource 반영 문제 | Basic Auth, browser cache, Spring static resource 혼재 | curl, 새 파일명, inline style로 원인 분리 |
 
 ---
 
-## Current Status
+## 13. Current Status
 
-현재 FastPass는 다음 구조까지 구현 및 검증되었습니다.
+현재 FastPass-k8s는 다음 구조까지 구현 및 검증되었습니다.
 
 ```text
 Spring Boot API
@@ -364,24 +345,23 @@ Docker Compose
 Kubernetes
 HPA
 k6 Load Test
-Prometheus
-Grafana
-Alertmanager
+Prometheus / Grafana
+PrometheusRule / Alertmanager
 Helm
-ArgoCD
+Argo CD
 GitHub Actions
 GHCR
 ```
 
-Kubernetes 배포는 GHCR image를 사용합니다.
+최종 배포 image는 GHCR 기반 commit SHA tag를 사용합니다.
 
 ```text
-ghcr.io/kdh8128/fastpass-k8s-api:latest
+ghcr.io/kdh8128/fastpass-k8s-api:<commit-sha>
 ```
 
 ---
 
-## Limitations
+## 14. Limitations
 
 현재 프로젝트는 로컬 Kubernetes 환경에서 운영 시나리오를 검증한 단계입니다.
 
@@ -389,40 +369,35 @@ ghcr.io/kdh8128/fastpass-k8s-api:latest
 
 - Queue length 기반 Worker autoscaling
 - KEDA 기반 autoscaling
-- ArgoCD Image Updater
-- commit SHA tag 기반 자동 배포
-- Helm values image tag 자동 업데이트
+- Argo CD Image Updater
 - Loki 기반 로그 수집
 - Trivy 기반 image vulnerability scan
 - branch protection rule
 - pull request merge condition
+- dev/staging/prod 환경 분리
 - 장애 대응 Runbook 자동화
 - LLM 기반 로그 분석 및 장애 원인 요약
 
 ---
 
-## Next Steps
+## 15. Next Steps
 
-향후 확장 방향은 다음과 같습니다.
-
-- Queue backlog 기반 Worker autoscaling
-- KEDA 또는 Prometheus metric 기반 autoscaling
-- Loki 기반 로그 수집
-- Trivy 기반 image scan
-- ArgoCD Image Updater 도입
-- commit SHA tag 기반 배포 고정
+- Queue backlog 기반 Worker autoscaling 적용
+- KEDA 또는 Prometheus custom metric 기반 autoscaling 검토
+- Loki 기반 로그 수집 구성
+- Trivy 기반 container image scan 추가
+- Argo CD Image Updater 도입 검토
+- dev/staging/prod 환경 분리
 - 장애 대응 Runbook 정리
 - LLM 기반 로그 분석 및 운영 자동화 실험
-- README architecture diagram 추가
-- 포트폴리오용 프로젝트 설명 정리
 
 ---
 
-## Project Direction
+## 16. Project Direction
 
-FastPass는 단순 API 구현 프로젝트가 아니라, Kubernetes 환경에서 트래픽 급증, Queue 적체, Pod 확장, 장애 탐지, GitOps 배포, CI/CD 흐름을 검증하는 DevOps/Cloud 포트폴리오 프로젝트입니다.
+FastPass-k8s는 단순 API 구현 프로젝트가 아니라, Kubernetes 환경에서 **트래픽 급증, Queue 적체, Pod 확장, 장애 탐지, GitOps 배포, CI/CD 자동화**를 검증하는 DevOps/Cloud 포트폴리오 프로젝트입니다.
 
-특히 다음 운영 시나리오를 중심으로 구성했습니다.
+핵심 운영 시나리오는 다음과 같습니다.
 
 ```text
 대량 신청 요청
@@ -430,11 +405,9 @@ FastPass는 단순 API 구현 프로젝트가 아니라, Kubernetes 환경에서
 → Worker 처리량 관측
 → Pod autoscaling
 → Metric 수집
-→ Alert 발생
+→ Alert 조건 확인
 → GitOps 기반 배포 상태 복구
 ```
-
-향후에는 Observability, 로그 분석, 장애 대응 Runbook, LLM 기반 운영 자동화 방향으로 확장할 수 있습니다.
 
 ---
 
