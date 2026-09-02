@@ -11,13 +11,8 @@ export const options = {
   scenarios: {
     ticket_open_burst: {
       executor: 'per-vu-iterations',
-
-      // USERS명의 사용자가
       vus: USERS,
-
-      // 각자 딱 1회 신청
       iterations: 1,
-
       maxDuration: '30s',
     },
   },
@@ -80,12 +75,41 @@ export default function (data) {
     params
   );
 
+  // 실패한 요청의 원인을 터미널에 상세 출력
+  if (res.status !== 200 && res.status !== 201) {
+    console.error(
+      `[APPLY FAILED] ` +
+      `VU=${__VU} ` +
+      `status=${res.status} ` +
+      `error=${res.error || 'none'} ` +
+      `error_code=${res.error_code || 'none'} ` +
+      `duration=${res.timings.duration}ms ` +
+      `body=${res.body || 'empty'}`
+    );
+  }
+
   check(res, {
     'apply request accepted': (r) =>
       r.status === 200 || r.status === 201,
 
-    'application status is PENDING': (r) =>
-      r.json('status') === 'PENDING',
+    'application status is PENDING': (r) => {
+      if (r.status !== 200 && r.status !== 201) {
+        return false;
+      }
+
+      try {
+        return r.json('status') === 'PENDING';
+      } catch (e) {
+        console.error(
+          `[INVALID RESPONSE] ` +
+          `VU=${__VU} ` +
+          `status=${r.status} ` +
+          `body=${r.body || 'empty'}`
+        );
+
+        return false;
+      }
+    },
   });
 }
 
