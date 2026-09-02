@@ -45,9 +45,16 @@ resources:
 
 hpa:
   enabled: true
-  minReplicas: 1
-  maxReplicas: 6
-  cpuAverageUtilization: 60
+
+  api:
+    minReplicas: 6
+    maxReplicas: 6
+    cpuAverageUtilization: 60
+
+  worker:
+    minReplicas: 1
+    maxReplicas: 6
+    cpuAverageUtilization: 60
 
 monitoring:
   enabled: true
