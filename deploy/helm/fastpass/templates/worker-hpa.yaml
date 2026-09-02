@@ -10,8 +10,8 @@ spec:
     kind: Deployment
     name: fastpass-worker
 
-  minReplicas: {{ .Values.hpa.minReplicas }}
-  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  minReplicas: {{ .Values.hpa.worker.minReplicas }}
+  maxReplicas: {{ .Values.hpa.worker.maxReplicas }}
 
   metrics:
     - type: Resource
@@ -19,5 +19,5 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.hpa.cpuAverageUtilization }}
+          averageUtilization: {{ .Values.hpa.worker.cpuAverageUtilization }}
 {{- end }}
