@@ -46,7 +46,7 @@ resources:
 hpa:
   enabled: true
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 6
   cpuAverageUtilization: 60
 
 monitoring:
