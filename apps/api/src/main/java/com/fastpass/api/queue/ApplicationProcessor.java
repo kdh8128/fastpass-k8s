@@ -3,7 +3,6 @@ package com.fastpass.api.queue;
 import com.fastpass.api.application.EventApplication;
 import com.fastpass.api.application.EventApplicationRepository;
 import com.fastpass.api.common.exception.NotFoundException;
-import com.fastpass.api.event.Event;
 import com.fastpass.api.event.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +24,22 @@ public class ApplicationProcessor {
     @Transactional
     public void process(Long applicationId) {
         EventApplication application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new NotFoundException("Application not found. id=" + applicationId));
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Application not found. id=" + applicationId
+                        )
+                );
 
-        Event event = eventRepository.findByIdForUpdate(application.getEvent().getId())
-                .orElseThrow(() -> new NotFoundException("Event not found. id=" + application.getEvent().getId()));
+        Long eventId = application.getEvent().getId();
 
-        if (event.isFull()) {
+        int updatedRows =
+                eventRepository.tryIncreaseAppliedCount(eventId);
+
+        if (updatedRows == 0) {
             application.markFailed();
             return;
         }
 
-        event.increaseAppliedCount();
         application.markSuccess();
     }
 }
