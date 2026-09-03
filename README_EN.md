@@ -17,15 +17,16 @@ The project focuses on the **operational lifecycle of a Kubernetes service** rat
 - GitHub Actions + GHCR CI/CD
 - Argo CD-based GitOps delivery
 
+Load testing identified synchronous PostgreSQL persistence and DB connection contention as major latency sources. The application flow was redesigned to accept requests through Redis first and persist final results asynchronously through Workers.
+
 ## Architecture
 
 ```mermaid
 flowchart LR
     Client[Client / k6] --> API[fastpass-api]
-    API --> DB[(PostgreSQL)]
     API --> Redis[(Redis Queue)]
     Redis --> Worker[fastpass-worker]
-    Worker --> DB
+    Worker --> DB[(PostgreSQL)]
 
     API -. metrics .-> Prometheus[Prometheus]
     Worker -. metrics .-> Prometheus
@@ -45,21 +46,22 @@ The API and Worker use the same Spring Boot image but run as separate Deployment
 
 | Component | Role |
 |---|---|
-| `fastpass-api` | Handles HTTP requests and enqueues applications |
-| `fastpass-worker` | Consumes Redis Queue and processes applications |
-| `postgres` | Stores event and application data |
-| `redis` | Stores the application queue |
+| `fastpass-api` | Handles HTTP requests and accepts applications through Redis |
+| `fastpass-worker` | Consumes Redis Queue and persists final application results |
+| `postgres` | Stores event and final application data |
+| `redis` | Stores pending application state and queue data |
 
 ## Processing Flow
 
 1. A user submits an event application.
-2. The API stores it with `PENDING` status.
+2. The API validates and stores the request in Redis with `PENDING` status.
 3. The application ID is pushed to Redis Queue.
-4. A Worker consumes the queued item.
-5. The result is updated to `SUCCESS` or `FAILED`.
-6. HPA scales API/Worker Pods under load.
-7. Prometheus collects application and infrastructure metrics.
-8. Alert rules detect queue backlog and Worker failures.
+4. The API immediately returns the `PENDING` result.
+5. A Worker consumes the queued item.
+6. The result is persisted as `SUCCESS` or `FAILED` in PostgreSQL.
+7. HPA scales API/Worker Pods under load.
+8. Prometheus collects application and infrastructure metrics.
+9. Alert rules detect queue backlog and Worker failures.
 
 ## CI/CD & GitOps
 
@@ -99,7 +101,7 @@ Helm, Argo CD, GitHub Actions, GHCR
 
 - Event creation, application, and status lookup APIs
 - Duplicate application prevention and capacity handling
-- Redis Queue-based asynchronous processing
+- Redis-first asynchronous request processing
 - Separate API and Worker Deployments
 - Worker batch processing
 - HPA-based autoscaling
@@ -125,18 +127,22 @@ Operational metrics include API latency, request rate, Pod CPU, JVM memory, DB c
 
 ### Load Test
 
-Using k6 with **20 VUs for 30 seconds**:
+Initial 300 VU tests showed high Apply API latency caused by synchronous DB persistence and HikariCP/PostgreSQL connection contention.
 
+After switching to a Redis-first request path:
+
+- Apply p95: **11.21s → 2.20s**
+- Improvement: **about 80.4%**
 - Request failure rate: **0%**
-- p95 response time: **403 ms**
-- Queue backlog increased temporarily and decreased as Workers processed requests
-- Worker failure count remained **0**
+- Capacity overflow: **none**
+
+A 500 VU stress test still maintained a **0% HTTP failure rate** and correct capacity handling, while exposing Worker throughput and queue drain time as the next bottleneck.
 
 ### Kubernetes / HPA
 
 - API, Worker, PostgreSQL, and Redis deployed as Kubernetes resources
 - Readiness/Liveness Probes and resource requests configured
-- API and Worker Pods scaled up to **3 replicas** under load
+- API and Worker Pods scale out automatically under load
 
 ### CI/CD / GitOps
 
@@ -152,7 +158,9 @@ Using k6 with **20 VUs for 30 seconds**:
 | `ErrImageNeverPull` | Switched from local image dependency to GHCR-based deployment |
 | HPA metric `<unknown>` | Verified resource requests and metrics-server |
 | Pod restarts | Adjusted readiness/liveness configuration and delays |
+| High Apply API latency | Replaced synchronous PostgreSQL request persistence with Redis-first asynchronous processing |
 | Argo CD `OutOfSync` | Excluded HPA-managed replica differences from GitOps reconciliation |
+| PostgreSQL connection exhaustion | Identified HPA/rolling-update connection pressure and documented DB connection budget considerations |
 | Worker failure metric increase | Added failure metrics and alert conditions |
 | Static resource update issue | Isolated Basic Auth, browser cache, and Spring static resource behavior |
 
@@ -193,6 +201,8 @@ The project currently validates the complete workflow in a **local Kubernetes en
 Planned improvements:
 
 - Queue-length-based Worker autoscaling / KEDA
+- API / Worker DB connection pool tuning
+- PgBouncer-based connection management
 - Loki-based centralized logging
 - Trivy container image scanning
 - dev / staging / prod environment separation
@@ -205,11 +215,19 @@ FastPass-k8s is an **operations-focused DevOps portfolio project**.
 
 ```text
 Traffic spike
-→ Queue backlog
+
+→ Redis request buffering
+
 → Worker processing
+
 → Pod autoscaling
+
 → Metric collection
+
+→ Bottleneck analysis
+
 → Alert detection
+
 → GitOps-based deployment and recovery
 ```
 

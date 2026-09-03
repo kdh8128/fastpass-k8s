@@ -41,25 +41,15 @@ FastPass는 선착순 이벤트 신청 상황을 가정한 Kubernetes 기반 Dev
 
 ```text
 Client / Web UI
-
       ↓
-
 fastpass-api
-
       ↓
-
 Redis
-
  ├── PENDING 상태
-
  └── Application Queue
-
           ↓
-
     fastpass-worker
-
           ↓
-
       PostgreSQL
 ```
 
@@ -116,19 +106,13 @@ API와 Worker를 별도 Kubernetes Deployment로 분리했습니다.
 
 ```text
 fastpass-api:
-
 HTTP 요청 처리
-
 Redis 기반 신청 접수
-
 PENDING 응답
 
 fastpass-worker:
-
 Redis Queue 소비
-
 PostgreSQL 최종 반영
-
 SUCCESS / FAILED 처리
 ```
 
@@ -280,21 +264,16 @@ Apply p95
 
 ### 500 VU Stress Test
 
-최종 Redis-first 구조에서 `500 VU / Capacity 100` 조건으로 추가 부하 테스트를 수행했습니다.
+추가로 `500 VU / Capacity 100` 조건에서 한계 테스트를 수행했습니다.
 
 ```text
 Apply Avg  = 4.06s
-
 Apply p95  = 6.41s
-
 HTTP Error = 0%
-
 Capacity   = 정확히 100
-
-Queue drain = 제한 시간 내 미완료
 ```
 
-500명의 동시 신청 요청은 모두 정상적으로 접수되었고 HTTP 실패율 0%와 정원 100명 정합성을 유지했습니다. 다만 300 VU 대비 응답 지연이 증가했고 테스트 제한 시간 내 Queue가 완전히 비워지지 않아, 500 VU 구간에서는 Worker 처리량과 Queue backlog가 추가 병목으로 나타나는 것을 확인했습니다.
+모든 신청 요청은 정상적으로 접수되고 정원 초과도 발생하지 않았지만, 제한 시간 내 Queue가 완전히 drain되지 않아 Worker 처리량과 Queue backlog가 다음 병목 구간임을 확인했습니다.
 
 ---
 
