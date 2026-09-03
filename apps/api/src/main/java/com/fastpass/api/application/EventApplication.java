@@ -11,15 +11,29 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_event_applicant",
-                        columnNames = {"event_id", "applicant_name"}
+                        columnNames = {
+                                "event_id",
+                                "applicant_name"
+                        }
+                ),
+                @UniqueConstraint(
+                        name = "uk_application_request_id",
+                        columnNames = {
+                                "request_id"
+                        }
                 )
         }
 )
 public class EventApplication {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
+
+    @Column(name = "request_id")
+    private Long requestId;
 
     private String applicantName;
 
@@ -35,23 +49,56 @@ public class EventApplication {
     protected EventApplication() {
     }
 
-    public EventApplication(Event event, String applicantName, ApplicationStatus status) {
+    /*
+     * 기존 코드/테스트 호환용 생성자
+     */
+    public EventApplication(
+            Event event,
+            String applicantName,
+            ApplicationStatus status
+    ) {
+        this(
+                null,
+                event,
+                applicantName,
+                status,
+                LocalDateTime.now()
+        );
+    }
+
+    /*
+     * Redis-first Worker용 생성자
+     */
+    public EventApplication(
+            Long requestId,
+            Event event,
+            String applicantName,
+            ApplicationStatus status,
+            LocalDateTime createdAt
+    ) {
+        this.requestId = requestId;
         this.event = event;
         this.applicantName = applicantName;
         this.status = status;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
     }
 
     public void markSuccess() {
-        this.status = ApplicationStatus.SUCCESS;
+        this.status =
+                ApplicationStatus.SUCCESS;
     }
 
     public void markFailed() {
-        this.status = ApplicationStatus.FAILED;
+        this.status =
+                ApplicationStatus.FAILED;
     }
 
     public Long getId() {
         return id;
+    }
+
+    public Long getRequestId() {
+        return requestId;
     }
 
     public String getApplicantName() {
