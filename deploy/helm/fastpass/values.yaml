@@ -47,7 +47,7 @@ hpa:
   enabled: true
 
   api:
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 6
     cpuAverageUtilization: 60
 
